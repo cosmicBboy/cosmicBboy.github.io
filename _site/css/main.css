@@ -1,3 +1,4 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans);
 /**
  * Reset some basic elements
  */
@@ -11,7 +12,7 @@ dl, dd, ol, ul, figure {
  * Basic styling
  */
 body {
-  font: 400 16px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font: 100 20px/1.5 "Open Sans", Helvetica, Arial, sans-serif;
   color: #111;
   background-color: #fdfdfd;
   background: #e7e7e7 url(../images/body-bg.png) 0 0 repeat;
@@ -45,7 +46,7 @@ figure > img {
   display: block; }
 
 figcaption {
-  font-size: 14px; }
+  font-size: 17.5px; }
 
 /**
  * Lists
@@ -61,11 +62,12 @@ li > ol {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 400; }
+  font-weight: 100; }
 
 header {
   padding-top: 35px;
-  padding-bottom: 25px; }
+  padding-bottom: 25px;
+  text-align: center; }
 
 header h1 {
   font-family: 'Chivo', 'Helvetica Neue', Helvetica, Arial, serif;
@@ -164,6 +166,8 @@ pre {
   border-top: 5px solid #424242;
   border-bottom: 1px solid #e8e8e8;
   min-height: 56px;
+  font-size: 20px;
+  font: 100 20px/1.5 "Open Sans", Helvetica, Arial, sans-serif;
   position: relative; }
 
 .site-title {
@@ -273,6 +277,23 @@ pre {
     float: none;
     width: -webkit-calc(100% - (30px / 2));
     width: calc(100% - (30px / 2)); } }
+footer {
+  padding-top: 20px;
+  padding-bottom: 30px;
+  margin-top: 40px;
+  font-size: 13px;
+  color: #aaa;
+  background: transparent url("../images/hr.png") 0 0 no-repeat; }
+
+footer a {
+  color: #666; }
+
+footer a:visited {
+  color: #404040; }
+
+footer a:hover {
+  color: #444; }
+
 /**
  * Page content
  */
@@ -283,24 +304,35 @@ pre {
   font-size: 20px; }
 
 .post-list {
+  text-align: center;
   margin-left: 0;
   list-style: none; }
   .post-list > li {
     margin-bottom: 30px; }
 
 .post-meta {
-  font-size: 14px;
+  font-size: 17.5px;
   color: #828282; }
 
 .post-link {
   display: block;
   font-size: 24px; }
 
+.profile-pic {
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 25px;
+  width: 250px; }
+
+.profile-pic img {
+  border-radius: 150px; }
+
 /**
  * Posts
  */
 .post-header {
-  margin-bottom: 30px; }
+  margin-bottom: 30px;
+  text-align: center; }
 
 .post-title {
   font-size: 42px;
