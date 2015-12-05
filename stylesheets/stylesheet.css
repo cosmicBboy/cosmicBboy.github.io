@@ -30,6 +30,7 @@ footer, header, hgroup, menu, nav, section {
 body {
 	line-height: 1;
 }
+
 ol, ul {
 	list-style: none;
 }
@@ -57,10 +58,10 @@ body {
 }
 
 a {
-  color: #d5000d;
+  color: #1756a9;
 }
 a:hover {
-  color: #c5000c;
+  color: #154A90;
 }
 
 header {
