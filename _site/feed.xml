@@ -2,12 +2,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>CSMCBBOY</title>
-    <description>Hi, my name is Niels Bantilan. I like to being creative with code.
+    <description>Hi, my name is Niels Bantilan. I like to be creative with code.
 </description>
-    <link>http://yourdomain.com/</link>
-    <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 05 Dec 2015 02:21:12 -0500</pubDate>
-    <lastBuildDate>Sat, 05 Dec 2015 02:21:12 -0500</lastBuildDate>
+    <link>http://cosmicbboy.github.io/</link>
+    <atom:link href="http://cosmicbboy.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Sun, 20 Dec 2015 17:44:44 -0500</pubDate>
+    <lastBuildDate>Sun, 20 Dec 2015 17:44:44 -0500</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -30,7 +30,7 @@ would otherwise be undetectable with human intuition alone.&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;“How do &lt;a href=&quot;https://apps.ams.usda.gov/fooddeserts/fooddeserts.aspx&quot;&gt;food deserts&lt;/a&gt;
 form in an urban context?”&lt;/em&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;em&gt;“Can breakdancing be effective way to teach kids about exercise?”&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;“Can breakdancing be an effective way to teach kids about exercise?”&lt;/em&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;em&gt;“How do non-profit humanitarian organizations share knowledge to inform their
 current and future efforts?”&lt;/em&gt;&lt;/p&gt;
@@ -48,8 +48,8 @@ by sharing some stories with you!&lt;/p&gt;
 &lt;p&gt;-NB&lt;/p&gt;
 </description>
         <pubDate>Fri, 04 Dec 2015 20:30:42 -0500</pubDate>
-        <link>http://yourdomain.com/blog/2015/12/04/Origins.html</link>
-        <guid isPermaLink="true">http://yourdomain.com/blog/2015/12/04/Origins.html</guid>
+        <link>http://cosmicbboy.github.io/blog/2015/12/04/Origins.html</link>
+        <guid isPermaLink="true">http://cosmicbboy.github.io/blog/2015/12/04/Origins.html</guid>
         
         
         <category>blog</category>
