@@ -16,4 +16,4 @@ twitter_username: cosmicBboy
 github_username:  cosmicBboy
 
 # Build settings
-markdown: redcarpet
+markdown: kramdown

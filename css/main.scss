@@ -28,6 +28,12 @@ $content-width:    800px;
 $on-palm:          600px;
 $on-laptop:        800px;
 
+table.dataframe {
+  background: white;
+  border-color: white;
+  margin-bottom: 25px;
+  font-size: 18px;
+}
 
 
 // Use media queries like this:

@@ -1,4 +1,10 @@
 @import url(http://fonts.googleapis.com/css?family=Open+Sans);
+table.dataframe {
+  background: white;
+  border-color: white;
+  margin-bottom: 25px;
+  font-size: 18px; }
+
 /**
  * Reset some basic elements
  */
