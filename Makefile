@@ -6,9 +6,22 @@ requirements:
 	brew install wget
 	mkdir -p ./$(BLOG_NOTEBOOKS)
 
+serve:
+	bundle exec jekyll serve
+
+serve-drafts:
+	bundle exec jekyll serve --drafts
+
 setup-ipynb:
 	wget -P ./$(BLOG_NOTEBOOKS) $(JEKYLL_SCRIPT)
 	wget -P ./$(BLOG_NOTEBOOKS) $(JEKYLL_TEMPLATE)
 
-nbconvert:
-	cd ./$(BLOG_NOTEBOOKS) && bash nbconvert.sh
+nbconvert-draft:
+	cd ./$(BLOG_NOTEBOOKS) && \
+	ipython nbconvert --config jekyll-post.py *.ipynb && \
+	mv *.md ../_drafts
+
+nbconvert-pub:
+	cd ./$(BLOG_NOTEBOOKS) && \
+	ipython nbconvert --config jekyll-post.py *.ipynb && \
+	mv *.md ../_posts
