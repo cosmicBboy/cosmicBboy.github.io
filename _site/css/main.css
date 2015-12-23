@@ -1,9 +1,18 @@
 @import url(http://fonts.googleapis.com/css?family=Open+Sans);
+@import url(http://fonts.googleapis.com/css?family=Montserrat);
+@import url(http://fonts.googleapis.com/css?family=Roboto);
 table.dataframe {
   background: white;
-  border-color: white;
+  border-color: #cbd2d6;
+  border-collapse: collapse;
   margin-bottom: 25px;
-  font-size: 18px; }
+  font-size: 16px; }
+
+table.dataframe td, th {
+  border-color: #cbd2d6;
+  border-style: solid;
+  padding: 5px;
+  text-align: left; }
 
 /**
  * Reset some basic elements
@@ -68,7 +77,8 @@ li > ol {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 100; }
+  font-family: Montserrat;
+  font-weight: bold; }
 
 header {
   padding-top: 35px;

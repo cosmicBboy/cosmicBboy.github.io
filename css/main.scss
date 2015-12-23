@@ -3,6 +3,8 @@
 ---
 @charset "utf-8";
 @import url(http://fonts.googleapis.com/css?family=Open+Sans);
+@import url(http://fonts.googleapis.com/css?family=Montserrat);
+@import url(http://fonts.googleapis.com/css?family=Roboto);
 
 // Our variables
 $base-font-family: "Open Sans", Helvetica, Arial, sans-serif;
@@ -10,6 +12,8 @@ $base-font-size:   20px;
 $base-font-weight: 100;
 $small-font-size:  $base-font-size * 0.875;
 $base-line-height: 1.5;
+$header-font-weight: bold;
+$header-font-family: Montserrat;
 
 $spacing-unit:     30px;
 
@@ -30,9 +34,17 @@ $on-laptop:        800px;
 
 table.dataframe {
   background: white;
-  border-color: white;
+  border-color: #cbd2d6;
+  border-collapse: collapse;
   margin-bottom: 25px;
-  font-size: 18px;
+  font-size: 16px;
+}
+
+table.dataframe td, th {
+  border-color: #cbd2d6;
+  border-style: solid;
+  padding: 5px;
+  text-align: left;
 }
 
 
