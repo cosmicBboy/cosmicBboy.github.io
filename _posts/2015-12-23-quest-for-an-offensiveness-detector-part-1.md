@@ -5,7 +5,7 @@ tags:
     - python
     - notebook
 ---
-It seems like so much of our online activities are tied to our identity. All manner of online shopping and social media require you to hand over pieces of your identity so that you can enjoy their product or service. At the crux of this particular quest is this thought: 
+It seems like so much of our online activities are tied to our identity. All manner of online shopping and social media require you to hand over pieces of your identity so that you can enjoy their product or service. At the crux of this particular quest is this thought:
 
 **What kinds of conversations are possible with social media that is completely anonymous?**
 
@@ -13,19 +13,19 @@ I recently started doing some data science projects at [Confesh](http://www.conf
 
 The thing about [sentiment analysis](https://en.wikipedia.org/wiki/Sentiment_analysis){:target="_blank"} is that a sentiment classifier (i.e. "this post has a positive/negative sentiment") only performs well if have access to a lot of labeled data. Luckily, Confesh also has a mechanism for reporting spam. These reports are a potential source of labels because users can provide free text to state the reason for reporting the confession or comment.
 
-One other limitation of sentiment analysis is that it can typically only detect patterns in simple binary outcomes, like "this review is positive or negative". I can talk about this more in a future post, but generally going for the simplest model is the most expedient thing to do when building these kinds of data pipelines. Luckily, the subset of the Confesh dataset that we're going to take a look at might be able to provide us with the everything we need to create a rudimentary 'offensiveness' detector.
+One other limitation of sentiment analysis is that it can typically only detect patterns in simple binary outcomes, like "this review is positive or negative". I can talk about this more in a future post, but generally going for the simplest model is the most expedient thing to do when building these kinds of data pipelines. Luckily, the subset of the Confesh dataset that we're going to take a look at might be able to provide us with everything that we need to create a rudimentary 'offensiveness' detector.
 
 In data science speak, I'd say we're dealing with [semi-structured data](https://en.wikipedia.org/wiki/Semi-structured_data){:target="_blank"} (which we often are). In this post, we're going to reshape and recast our dataset into a structure that can help answer some interesting questions.
 
 I always like to have a working hypothesis to guide my explorations, so here it goes:
 
-> There are statistical patterns in the word composition of confessions that we can predict whether a confession is `offensive` or `not offensive` with some degree of accuracy using a simple classifier algorithm.
+> There are statistical patterns in the word composition of confessions such that we can predict whether a confession is `offensive` or `not offensive` with some degree of accuracy using a simple classifier algorithm.
 
 I won't really be able to test this hypothesis in this post, but I think it's a good enough motivation to get us started!
 
 # The Toolbox
 
-As with any craft, we have need our tools... in our case, Python and a bunch of nice open source libraries!
+As with any craft, we need some tools... in our case, those would be Python and a bunch of nice open source libraries!
 
 
 {% highlight python %}
@@ -47,13 +47,13 @@ import cufflinks as cf
 import plotly.plotly as py
 import plotly.graph_objs as go
 from plotly import tools
-from plotly.tools import FigureFactory as FF 
+from plotly.tools import FigureFactory as FF
 
 plt.style.use('ggplot')
 %matplotlib inline
 {% endhighlight %}
 
-# The Data 
+# The Data
 
 ### What do you get if you give a bunch of liberal arts college students an anonymous platform?
 
@@ -137,7 +137,7 @@ holysr_df[['id_secret', 'confession', 'clean_tokens_secret', ]].head()
 
 
 
-The `confession` column is the original raw text, and the `clean_tokens_secret` is the result of some preprocessing that I did. For the initial preprocessing step, I did the following:
+The `confession` column is the original raw text, and the `clean_tokens_secret` is the result of some preprocessing that I did. For this initial preprocessing step, I did the following:
 
 - removed punctuation
 - removed special characters like `/` or `~`,
@@ -151,7 +151,7 @@ Not surprisingly, we need to do more preprocessing...
 
 Ultimately, we want to process our data so that we can create some interesting things with them, like visualizations and machine learning models.
 
-After seeing the unfiltered version of the results that you are about to see, I decided that processing select words (namely the n-word) was appropriate. While it is important to let the data speak for itself, I didn't feel comfortable presenting these results without exercising some editorial judgement.
+After seeing the unfiltered version of the results that you are about to see, I decided that processing select words (namely the n-word) was appropriate. While it's important to let the data speak for itself, I didn't feel comfortable presenting these results without exercising some editorial judgement.
 
 **Warning: there is some offensive language in this text analysis.**
 
@@ -159,7 +159,7 @@ After seeing the unfiltered version of the results that you are about to see, I 
 {% highlight python %}
 # Removing the offensive word by matching it to a pattern.
 def preprocess_pattern(text, replace="n_word", p=r'nigger|niger|niggar|nigar'):
-    return " ".join([replace if re.search(p, t) else t 
+    return " ".join([replace if re.search(p, t) else t
                      for t in text.lower().split()])
 
 # these are the columns we want to process
@@ -170,13 +170,13 @@ text_columns = [
     "report_reason"
 ]
 
-# apply the preprocess_pattern function to 
+# apply the preprocess_pattern function to
 # each column that contains text
 for c in text_columns:
     holysr_df[c] = holysr_df[c].apply(
         lambda x: x if isinstance(x, float) and np.isnan(x) else preprocess_pattern(x)
     )
-    
+
 holysr_df[[SECRET_COL]][holysr_df[SECRET_COL].str.contains("n_word")].head()
 {% endhighlight %}
 
@@ -251,18 +251,18 @@ Below we create a word cloud in the shape of the Confesh logo, all purple n' stu
 
 {% highlight python %}
 word_cloud_options = {
-    'width': 1000, 
+    'width': 1000,
     'height': 1000,
-    'background_color': "white", 
-    'max_words': 300, 
+    'background_color': "white",
+    'max_words': 300,
     'stopwords': STOPWORDS,
-    'random_state': 42   
+    'random_state': 42
 }
 
 def create_word_cloud(text_iterable, image_color_fp=None,
                       title='', **kwargs):
     confesh_coloring = imread(image_color_fp)
-    
+
     # generating the word cloud plot
     kwargs.update({'mask': confesh_coloring})
     wc = WordCloud(**kwargs)
@@ -276,7 +276,7 @@ def create_word_cloud(text_iterable, image_color_fp=None,
     plt.imshow(wc.recolor(color_func=image_colors))
     plt.axis("off")
     plt.show();
-    
+
 logo_fp = '../assets/logo-purple.png'
 create_word_cloud(match_secrets[SECRET_COL].astype(str),
                   logo_fp, **word_cloud_options);
@@ -290,13 +290,17 @@ As you can see, the n-word is one of the most frequently used words in the datas
 
 Pardon the grammitically incorrect thought, but actually I think I may have been jumping to a conclusion there. Isn't the entire internet a platform for trolling, bigotry, and racism? It occured to me that the quality of content on a social media platform is heavily influenced by the moderation system of that platform.
 
-Like Facebook and Twitter, Confesh has a moderation system in which communities can report confessions and comments. We will end this post by answering a final question: 
+Like Facebook and Twitter, Confesh has a moderation system that communities can use to report confessions and comments. We will end this post by answering a final question:
 
-> If we group confession by those that were reported by the community and those that were not, how would the above word frequency distribution change? 
+> If we group confessions by those that were reported by the community and those that were not, how would the above word frequency distribution change?
 
 # Counting Ngrams: An Introduction to Text-mining
 
-It's great to count individual words and all, but what we lose by doing that is context. What words appeared together in sequence? A simple way to address this problem is by computing ngrams. An ngram is the `n` sequence of words that appear in succession for any given piece of text. So a unigram would be a single word, a bigram would be a sequence of two words, like so:
+It's great to count individual words and all, but what we lose by doing that is context.
+
+What words appeared together in sequence?
+
+A simple way to address this problem is by computing ngrams. An ngram is the `n` sequence of words that appear in succession for any given piece of text. So a unigram would be a single word, a bigram would be a sequence of two words, like so:
 
 - Unigram (1-gram): 'the'
 - Bigram (2-gram): 'the cat'
@@ -338,7 +342,7 @@ report_text_corpus = count_token_frequency(report_text['clean_tokens_secret'], 0
 
 # merge frequencies for all secrets, reported, and not reported
 merge_cols = ['word', 'frequency']
-all_corpus = secrets_corpus.merge(secrets_not_reported_corpus[merge_cols], on="word", 
+all_corpus = secrets_corpus.merge(secrets_not_reported_corpus[merge_cols], on="word",
                                   how="left", suffixes=("_all", "_not_reported"))
 all_corpus = all_corpus.merge(secrets_reported_corpus[merge_cols], on="word", how="left")
 all_corpus = all_corpus.rename(columns={'frequency': 'frequency_reported'})
@@ -407,15 +411,15 @@ all_corpus.head()
 
 
 
-Just looking at the first 5 rows in the ngram frequency table, we can pose an interesting hypothesis: 
+Just looking at the first 5 rows in the ngram frequency table, we can pose an interesting hypothesis:
 
-> The same word repeated many times in sequence is an indicator of spam. 
+> The same word repeated many times in sequence is an indicator of spam.
 
 I think the relationship between offensiveness and spam is an interesting topic, but I think that's for another post. For now, we need to do a...
 
 # Sanity Check!
 
-As a data scientist, it's important to do sanity checks often. Because our data as it is now is so different from how it was in the beginning, it's important to check and double-check if the transformations we are actually performing are in fact the transformations that we intend. 
+As a data scientist, it's important to do sanity checks often. Because our data as it is now is so different from how it was in the beginning, it's important to check and double-check if the transformations we are actually performing are in fact the transformations that we intend.
 
 Below, we do a quick test to make sure that for each row, the sum of `frequency_not_reported` and `frequency_reported` should equal `frequency_all`. This is because the `frequency_not_reported` and `frequency_reported` categories are mutually exhaustive and mutually exclusive.
 
@@ -435,9 +439,9 @@ print "We should expect this to be zero!: %d" % not_equal.shape[0]
 
 Wouldn't it be nice to compare confessions that contain the most frequent words in the corpus? How about if you can break it down by whether a confession was reported or not?
 
-To do this, we need to enrich our ngram frequency data with some more text data. Below, we filter the ngrams table to include only the top 20 unigrams, bigrams, and trigrams for a total of 60 (1,2,3)-grams. 
+To do this, we need to enrich our ngram frequency data with some more text data. Below, we filter the ngrams table to include only the top 20 unigrams, bigrams, and trigrams for a total of 60 (1,2,3)-grams.
 
-Then, we search through the cleaned confession text to find confessions that contain that our top 60 (1,2,3)-ngrams. We filter those search results by selecting the top 5 confessions that have the most comments.
+Then, we search through the cleaned confession text to find confessions that contain our top 60 (1,2,3)-ngrams. We filter those search results by selecting the top 5 confessions that have the most comments.
 
 
 {% highlight python %}
@@ -446,7 +450,7 @@ Then, we search through the cleaned confession text to find confessions that con
 # you should be able to see the top 4 posts
 # containing that word, sorted by number of comments
 
-def format_text_annotation(text_list, n=40):
+def format_text_annotation(text_list, n=35):
     text_list = [t.decode('utf-8').encode('ascii', 'ignore') for t in text_list]
     text_list = [" ".join(t.split()) for t in text_list]
     text_list = "<br>".join([t if len(t) < n else t[:n] + "..." for t in text_list])
@@ -498,32 +502,32 @@ all_corpus[['word', 'top_secrets', 'top_reports']].head()
     <tr>
       <th>0</th>
       <td>n_word</td>
-      <td>to the two bitches who didn't make way a...&lt;br...</td>
-      <td>you who are shaming am for having a very...&lt;br...</td>
+      <td>to the two bitches who didn't make ...&lt;br&gt;i'm ...</td>
+      <td>you who are shaming am for having a...&lt;br&gt;n_wo...</td>
     </tr>
     <tr>
       <th>4</th>
       <td>like</td>
-      <td>hi you guys. i'm a recent-ish alum. i ha...&lt;br...</td>
-      <td>let's give this a go: rate my body! post...&lt;br...</td>
+      <td>hi you guys. i'm a recent-ish alum....&lt;br&gt;i re...</td>
+      <td>let's give this a go: rate my body!...&lt;br&gt;some...</td>
     </tr>
     <tr>
       <th>5</th>
       <td>dont</td>
-      <td>bringing back an oldie. paste whatever i...&lt;br...</td>
-      <td>the mhc confessional needs to be blocked...&lt;br...</td>
+      <td>bringing back an oldie. paste whate...&lt;br&gt;hi y...</td>
+      <td>the mhc confessional needs to be bl...&lt;br&gt;so h...</td>
     </tr>
     <tr>
       <th>6</th>
       <td>get</td>
-      <td>can smith &amp; holyoke together count to 10...&lt;br...</td>
-      <td>the mhc confessional needs to be blocked...&lt;br...</td>
+      <td>can smith &amp; holyoke together count ...&lt;br&gt;deba...</td>
+      <td>the mhc confessional needs to be bl...&lt;br&gt;okay...</td>
     </tr>
     <tr>
       <th>7</th>
       <td>want</td>
-      <td>i'm a guy. ask me whatever you want.&lt;br&gt;debate...</td>
-      <td>"fellow classmates, hope all is well wit...&lt;br...</td>
+      <td>i'm a guy. ask me whatever you want...&lt;br&gt;deba...</td>
+      <td>"fellow classmates, hope all is wel...&lt;br&gt;so, ...</td>
     </tr>
   </tbody>
 </table>
@@ -543,6 +547,7 @@ def create_bar_trace(dataframe, graph_obj, x_col, y_col, text_col, **go_kwargs):
 def create_word_freq_subplot(dataframe, ngrams=1, colorlist=[]):
     dataframe = dataframe[dataframe['ngrams'] == ngrams].copy()
     dataframe.sort_values('frequency_all', inplace=True, ascending=False)
+    dataframe.fillna(0, inplace=True)
 
     if ngrams == 1:
         gram_text = "Unigrams"
@@ -550,17 +555,17 @@ def create_word_freq_subplot(dataframe, ngrams=1, colorlist=[]):
         gram_text = "Bigrams"
     if ngrams == 3:
         gram_text = "Trigrams"
-        
-    trace1 = create_bar_trace(dataframe, go.Bar, 'frequency_not_reported', 'word', 
+
+    trace1 = create_bar_trace(dataframe, go.Bar, 'frequency_not_reported', 'word',
                               'top_secrets',name='<b>%s Not Reported</b>' % gram_text,
                               marker={'color': colorlist[0]})
-    trace2 = create_bar_trace(dataframe, go.Bar,'frequency_reported', 'word', 
+    trace2 = create_bar_trace(dataframe, go.Bar,'frequency_reported', 'word',
                               'top_reports', name='<b>%s Reported</b>' % gram_text,
                               marker={'color': colorlist[1]})
-    
+
     data = [trace1, trace2]
     return data
-    
+
 def add_subplot_fig(fig, row, col, traces):
     for t in traces:
         fig.append_trace(t, row, col)
@@ -570,7 +575,7 @@ subplot1 = create_word_freq_subplot(all_corpus, ngrams=1, colorlist=['#bc94d3', 
 subplot2 = create_word_freq_subplot(all_corpus, ngrams=2, colorlist=['#82ddbc', '#459b7c'])
 subplot3 = create_word_freq_subplot(all_corpus, ngrams=3, colorlist=['#f2d37d', '#c9a654'])
 
-fig = tools.make_subplots(rows=3, cols=1, 
+fig = tools.make_subplots(rows=3, cols=1,
                           subplot_titles=('Unigrams', 'Bigrams', 'Trigrams'),
                           vertical_spacing = 0.14);
 
@@ -609,16 +614,16 @@ url = py.iplot(fig, filename="confesh-exploration")
     [ (1,1) x1,y1 ]
     [ (2,1) x2,y2 ]
     [ (3,1) x3,y3 ]
-    
+
 
 
 # Compare and Contrast
 
 ### What do confessions look like when you remove reported posts?
 
-An emerging question from this exploration is this: 
+An emerging question from this exploration is this:
 
-> "How does the Mount Holyoke community feel about the use of the n-word?". 
+> "How does the Mount Holyoke community feel about the use of the n-word?".
 
 It'll take a little bit more data smithery to get at this question in a deeper way, but for now, you can explore the distribution of unigrams, bigrams, and trigrams in the interactive frequency plots below. Click on the legend items to hide/show a particular category, and see what you get!
 
@@ -630,7 +635,7 @@ HTML("{::nomarkdown}" + url.embed_code + "{:/nomarkdown}")
 
 
 
-{::nomarkdown}<iframe id="igraph" scrolling="no" style="border:none;"seamless="seamless" src="https://plot.ly/~niels.bantilan/30.embed" height="1200px" width="750px"></iframe>{:/nomarkdown}
+{::nomarkdown}<iframe id="igraph" scrolling="no" style="border:none;"seamless="seamless" src="https://plot.ly/~nielsbantilan/12.embed" height="1200px" width="750px"></iframe>{:/nomarkdown}
 
 
 
@@ -642,7 +647,7 @@ HTML("{::nomarkdown}" + url.embed_code + "{:/nomarkdown}")
 
 ## More Questions
 
-As always, exploring data only leads to more questions. The next step on this quest is to see why the community is reporting a particular post. With these text data, we can start to label our confessions with something like `offensive` / `not offensive`. 
+As always, exploring data only leads to more questions. The next step on this quest is to see why the community is reporting a particular post. With these text data, we can start to label our confessions with something like `offensive` / `not offensive`.
 
 Just to give you a little taste:
 
