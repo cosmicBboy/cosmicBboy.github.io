@@ -17,7 +17,7 @@ To make this comparison, I used [neighborhood damage data](https://data.humdata.
 
 ### $2.3 billion: total estimated cost of damages done to the economy
 
-Based on the estimates in the [global exposure dataset](https://data.humdata.org/dataset/gar15-global-exposure-dataset-for-syrian-arab-republic), the total value of capital stock in the city of Aleppo was \$29.5 billion in 2015. Assuming that the percentage of damaged buildings (8%) in each neighborhood is a fairly reasonable proxy for economic disruption and infrastructure damage, we can project a lower bound of $2.3 billion as the total cost of the Syrian civil war to Aleppo's economy. This seems like a staggering amount, not even considering the immeasurable human suffering endured by the its citizens.
+Based on the estimates in the [global exposure dataset](https://data.humdata.org/dataset/gar15-global-exposure-dataset-for-syrian-arab-republic), the total value of capital stock in the city of Aleppo was \$29.5 billion in 2015. Assuming that the percentage of damaged buildings (8%) in each neighborhood is a fairly reasonable proxy for economic disruption and infrastructure damage, we can project a lower bound of $2.3 billion as the total cost of the Syrian civil war to Aleppo's economy. This seems like a staggering amount, not even considering the immeasurable human suffering endured by its citizens.
 
 ### Parting thoughts
 
