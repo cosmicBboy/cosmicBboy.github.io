@@ -7,6 +7,7 @@ requirements:
 	mkdir -p ./$(BLOG_NOTEBOOKS)
 
 serve:
+	# make sure to use python 2.7
 	bundle exec jekyll serve
 
 serve-drafts:

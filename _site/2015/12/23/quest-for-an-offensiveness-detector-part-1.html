@@ -10,8 +10,8 @@
   <meta name="description" content="It seems like so much of our online activities are tied to our identity. All manner of online shopping and social media require you to hand over pieces of yo...">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://cosmicbboy.github.io/2015/12/23/quest-for-an-offensiveness-detector-part-1.html">
-  <link rel="alternate" type="application/rss+xml" title="CSMCBBOY" href="http://cosmicbboy.github.io/feed.xml">
+  <link rel="canonical" href="http://localhost:4000/2015/12/23/quest-for-an-offensiveness-detector-part-1.html">
+  <link rel="alternate" type="application/rss+xml" title="CSMCBBOY" href="http://localhost:4000/feed.xml">
 
   <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
@@ -44,6 +44,8 @@
         
           
           <a class="page-link" href="/about/">About</a>
+          
+        
           
         
           
@@ -85,7 +87,7 @@
 <p>I always like to have a working hypothesis to guide my explorations, so here it goes:</p>
 
 <blockquote>
-  <p>There are statistical patterns in the word composition of confessions such that we can predict whether a confession is <code>offensive</code> or <code>not offensive</code> with some degree of accuracy using a simple classifier algorithm.</p>
+  <p>There are statistical patterns in the word composition of confessions such that we can predict whether a confession is <code class="highlighter-rouge">offensive</code> or <code class="highlighter-rouge">not offensive</code> with some degree of accuracy using a simple classifier algorithm.</p>
 </blockquote>
 
 <p>I won’t really be able to test this hypothesis in this post, but I think it’s a good enough motivation to get us started!</p>
@@ -94,10 +96,10 @@
 
 <p>As with any craft, we need some tools… in our case, those would be Python and a bunch of nice open source libraries!</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
 <span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
@@ -108,14 +110,14 @@
 <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
 
 <span class="c"># importing plotly-related modules</span>
-<span class="kn">import</span> <span class="nn">cufflinks</span> <span class="kn">as</span> <span class="nn">cf</span>
-<span class="kn">import</span> <span class="nn">plotly.plotly</span> <span class="kn">as</span> <span class="nn">py</span>
-<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="kn">as</span> <span class="nn">go</span>
+<span class="kn">import</span> <span class="nn">cufflinks</span> <span class="k">as</span> <span class="n">cf</span>
+<span class="kn">import</span> <span class="nn">plotly.plotly</span> <span class="k">as</span> <span class="n">py</span>
+<span class="kn">import</span> <span class="nn">plotly.graph_objs</span> <span class="k">as</span> <span class="n">go</span>
 <span class="kn">from</span> <span class="nn">plotly</span> <span class="kn">import</span> <span class="n">tools</span>
 <span class="kn">from</span> <span class="nn">plotly.tools</span> <span class="kn">import</span> <span class="n">FigureFactory</span> <span class="k">as</span> <span class="n">FF</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s">&#39;ggplot&#39;</span><span class="p">)</span>
-<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span></code></pre></div>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s">'ggplot'</span><span class="p">)</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span></code></pre></figure>
 
 <h1 id="the-data">The Data</h1>
 
@@ -125,28 +127,28 @@
 
 <p>We can read in the dataset into memory to take a closer look. Think of this as our chopping block. We’re going to take four seperate csv (comma-separated value) files and splice them together.</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Reading in data</span>
-<span class="n">holyr_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&#39;../tmp/clean/holyokecon_confessional_reports.csv&#39;</span><span class="p">)</span>
-<span class="n">holys_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&#39;../tmp/clean/holyokecon_confessional_secrets.csv&#39;</span><span class="p">)</span>
-<span class="n">holyraw_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&#39;../tmp/raw/holyokecon_confessional_secrets.csv&#39;</span><span class="p">)</span>
-<span class="n">holyrawr_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">&#39;../tmp/raw/holyokecon_confessional_reports.csv&#39;</span><span class="p">)</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Reading in data</span>
+<span class="n">holyr_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">'../tmp/clean/holyokecon_confessional_reports.csv'</span><span class="p">)</span>
+<span class="n">holys_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">'../tmp/clean/holyokecon_confessional_secrets.csv'</span><span class="p">)</span>
+<span class="n">holyraw_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">'../tmp/raw/holyokecon_confessional_secrets.csv'</span><span class="p">)</span>
+<span class="n">holyrawr_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">'../tmp/raw/holyokecon_confessional_reports.csv'</span><span class="p">)</span>
 
 <span class="c"># defining some global variables</span>
-<span class="n">SECRET_COL</span> <span class="o">=</span> <span class="s">&#39;clean_tokens_secret&#39;</span>
-<span class="n">REPORT_COL</span> <span class="o">=</span> <span class="s">&#39;clean_tokens_report&#39;</span>
+<span class="n">SECRET_COL</span> <span class="o">=</span> <span class="s">'clean_tokens_secret'</span>
+<span class="n">REPORT_COL</span> <span class="o">=</span> <span class="s">'clean_tokens_report'</span>
 
 <span class="c"># merge the clean secrets, clean reports, raw reports, and raw secrets data</span>
-<span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holys_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">holyr_df</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s">&quot;secret_id&quot;</span><span class="p">,</span>
-                          <span class="n">how</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;_secret&#39;</span><span class="p">,</span> <span class="s">&#39;_report&#39;</span><span class="p">))</span>
-<span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">holyraw_df</span><span class="p">[[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;create_date&#39;</span><span class="p">,</span> <span class="s">&#39;confession&#39;</span><span class="p">]],</span>
-                            <span class="n">left_on</span><span class="o">=</span><span class="s">&#39;id_secret&#39;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
-<span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">holyrawr_df</span><span class="p">[[</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;reason&#39;</span><span class="p">]],</span>
-                            <span class="n">left_on</span><span class="o">=</span><span class="s">&#39;id_report&#39;</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
-<span class="n">holysr_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;reason&#39;</span><span class="p">:</span> <span class="s">&#39;report_reason&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holys_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">holyr_df</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="s">'id'</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s">"secret_id"</span><span class="p">,</span>
+                          <span class="n">how</span><span class="o">=</span><span class="s">'left'</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s">'_secret'</span><span class="p">,</span> <span class="s">'_report'</span><span class="p">))</span>
+<span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">holyraw_df</span><span class="p">[[</span><span class="s">'id'</span><span class="p">,</span> <span class="s">'create_date'</span><span class="p">,</span> <span class="s">'confession'</span><span class="p">]],</span>
+                            <span class="n">left_on</span><span class="o">=</span><span class="s">'id_secret'</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s">'id'</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">'left'</span><span class="p">)</span>
+<span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">holyrawr_df</span><span class="p">[[</span><span class="s">'id'</span><span class="p">,</span> <span class="s">'reason'</span><span class="p">]],</span>
+                            <span class="n">left_on</span><span class="o">=</span><span class="s">'id_report'</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="s">'id'</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">'left'</span><span class="p">)</span>
+<span class="n">holysr_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s">'reason'</span><span class="p">:</span> <span class="s">'report_reason'</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 <span class="c">#preprocess: remove rows with null clean_tokens_secret value</span>
 <span class="n">holysr_df</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">holysr_df</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
-<span class="n">holysr_df</span><span class="p">[[</span><span class="s">&#39;id_secret&#39;</span><span class="p">,</span> <span class="s">&#39;confession&#39;</span><span class="p">,</span> <span class="s">&#39;clean_tokens_secret&#39;</span><span class="p">,</span> <span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></div>
+<span class="n">holysr_df</span><span class="p">[[</span><span class="s">'id_secret'</span><span class="p">,</span> <span class="s">'confession'</span><span class="p">,</span> <span class="s">'clean_tokens_secret'</span><span class="p">,</span> <span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></figure>
 
 <div>
 <table border="1" class="dataframe">
@@ -193,11 +195,11 @@
 </table>
 </div>
 
-<p>The <code>confession</code> column is the original raw text, and the <code>clean_tokens_secret</code> is the result of some preprocessing that I did. For this initial preprocessing step, I did the following:</p>
+<p>The <code class="highlighter-rouge">confession</code> column is the original raw text, and the <code class="highlighter-rouge">clean_tokens_secret</code> is the result of some preprocessing that I did. For this initial preprocessing step, I did the following:</p>
 
 <ul>
   <li>removed punctuation</li>
-  <li>removed special characters like <code>/</code> or <code>~</code>,</li>
+  <li>removed special characters like <code class="highlighter-rouge">/</code> or <code class="highlighter-rouge">~</code>,</li>
   <li>removed numbers</li>
   <li>lowercased all letters</li>
   <li>removed stopwords (i.e. common words like ‘the’, ‘and’, ‘a’ that are typically structural and convey little to the ‘aboutness’ of a piece of text).</li>
@@ -213,27 +215,27 @@
 
 <p><strong>Warning: there is some offensive language in this text analysis.</strong></p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Removing the offensive word by matching it to a pattern.</span>
-<span class="k">def</span> <span class="nf">preprocess_pattern</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="s">&quot;n_word&quot;</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="s">r&#39;nigger|niger|niggar|nigar&#39;</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">replace</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Removing the offensive word by matching it to a pattern.</span>
+<span class="k">def</span> <span class="nf">preprocess_pattern</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="s">"n_word"</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="s">r'nigger|niger|niggar|nigar'</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">" "</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">replace</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span>
                      <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()])</span>
 
 <span class="c"># these are the columns we want to process</span>
 <span class="n">text_columns</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s">&quot;confession&quot;</span><span class="p">,</span>
-    <span class="s">&quot;clean_tokens_secret&quot;</span><span class="p">,</span>
-    <span class="s">&quot;clean_tokens_report&quot;</span><span class="p">,</span>
-    <span class="s">&quot;report_reason&quot;</span>
+    <span class="s">"confession"</span><span class="p">,</span>
+    <span class="s">"clean_tokens_secret"</span><span class="p">,</span>
+    <span class="s">"clean_tokens_report"</span><span class="p">,</span>
+    <span class="s">"report_reason"</span>
 <span class="p">]</span>
 
 <span class="c"># apply the preprocess_pattern function to</span>
 <span class="c"># each column that contains text</span>
 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">text_columns</span><span class="p">:</span>
-    <span class="n">holysr_df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="n">holysr_df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="n">preprocess_pattern</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="p">)</span>
 
-<span class="n">holysr_df</span><span class="p">[[</span><span class="n">SECRET_COL</span><span class="p">]][</span><span class="n">holysr_df</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s">&quot;n_word&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></div>
+<span class="n">holysr_df</span><span class="p">[[</span><span class="n">SECRET_COL</span><span class="p">]][</span><span class="n">holysr_df</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="nb">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s">"n_word"</span><span class="p">)]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></figure>
 
 <div>
 <table border="1" class="dataframe">
@@ -270,24 +272,24 @@
 
 <h1 id="lets-find-a-pattern-not">Let’s find a pattern… not!</h1>
 
-<p>This next little code block is meant to sift through all the secrets for a specific <code>pattern</code> and return only those posts that contain a match. In this initial analysis, I want to be able to analyze all the confessions, so we’ll leave pattern at <code>''</code>, which means all secrets will be matched.</p>
+<p>This next little code block is meant to sift through all the secrets for a specific <code class="highlighter-rouge">pattern</code> and return only those posts that contain a match. In this initial analysis, I want to be able to analyze all the confessions, so we’ll leave pattern at <code class="highlighter-rouge">''</code>, which means all secrets will be matched.</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># detecting secrets containing a specific word</span>
-<span class="n">pattern</span> <span class="o">=</span> <span class="s">r&#39;&#39;</span>
-<span class="n">selector</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># detecting secrets containing a specific word</span>
+<span class="n">pattern</span> <span class="o">=</span> <span class="s">r''</span>
+<span class="n">selector</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="nb">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
 <span class="n">match_df</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">selector</span><span class="p">]</span>
 
 <span class="c"># Drop duplicate secrets</span>
-<span class="n">match_secrets</span> <span class="o">=</span> <span class="n">match_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="s">&#39;clean_tokens_secret&#39;</span><span class="p">)</span>
+<span class="n">match_secrets</span> <span class="o">=</span> <span class="n">match_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="s">'clean_tokens_secret'</span><span class="p">)</span>
 
 <span class="c"># Match secrets that were not reported</span>
-<span class="n">match_not_reported</span> <span class="o">=</span> <span class="n">match_secrets</span><span class="p">[</span><span class="n">match_secrets</span><span class="p">[</span><span class="s">&#39;id_report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span>
+<span class="n">match_not_reported</span> <span class="o">=</span> <span class="n">match_secrets</span><span class="p">[</span><span class="n">match_secrets</span><span class="p">[</span><span class="s">'id_report'</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span>
 
 <span class="c"># Match secrets that were reported</span>
-<span class="n">match_reported</span> <span class="o">=</span> <span class="n">match_secrets</span><span class="p">[</span><span class="n">match_secrets</span><span class="p">[</span><span class="s">&#39;id_report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
+<span class="n">match_reported</span> <span class="o">=</span> <span class="n">match_secrets</span><span class="p">[</span><span class="n">match_secrets</span><span class="p">[</span><span class="s">'id_report'</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
 
 <span class="c"># Select report text</span>
-<span class="n">report_text</span> <span class="o">=</span> <span class="n">match_df</span><span class="p">[</span><span class="n">match_df</span><span class="p">[</span><span class="n">REPORT_COL</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span></code></pre></div>
+<span class="n">report_text</span> <span class="o">=</span> <span class="n">match_df</span><span class="p">[</span><span class="n">match_df</span><span class="p">[</span><span class="n">REPORT_COL</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span></code></pre></figure>
 
 <h1 id="makin-a-word-cloud-cause-we-can">Makin’ a Word Cloud, ‘cause we can…</h1>
 
@@ -295,23 +297,23 @@
 
 <p>Below we create a word cloud in the shape of the Confesh logo, all purple n’ stuff, ‘cause purple is pretty.</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">word_cloud_options</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;width&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-    <span class="s">&#39;height&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-    <span class="s">&#39;background_color&#39;</span><span class="p">:</span> <span class="s">&quot;white&quot;</span><span class="p">,</span>
-    <span class="s">&#39;max_words&#39;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
-    <span class="s">&#39;stopwords&#39;</span><span class="p">:</span> <span class="n">STOPWORDS</span><span class="p">,</span>
-    <span class="s">&#39;random_state&#39;</span><span class="p">:</span> <span class="mi">42</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">word_cloud_options</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">'width'</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="s">'height'</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="s">'background_color'</span><span class="p">:</span> <span class="s">"white"</span><span class="p">,</span>
+    <span class="s">'max_words'</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="s">'stopwords'</span><span class="p">:</span> <span class="n">STOPWORDS</span><span class="p">,</span>
+    <span class="s">'random_state'</span><span class="p">:</span> <span class="mi">42</span>
 <span class="p">}</span>
 
 <span class="k">def</span> <span class="nf">create_word_cloud</span><span class="p">(</span><span class="n">text_iterable</span><span class="p">,</span> <span class="n">image_color_fp</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                      <span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                      <span class="n">title</span><span class="o">=</span><span class="s">''</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">confesh_coloring</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">image_color_fp</span><span class="p">)</span>
 
     <span class="c"># generating the word cloud plot</span>
-    <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;mask&#39;</span><span class="p">:</span> <span class="n">confesh_coloring</span><span class="p">})</span>
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">'mask'</span><span class="p">:</span> <span class="n">confesh_coloring</span><span class="p">})</span>
     <span class="n">wc</span> <span class="o">=</span> <span class="n">WordCloud</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_iterable</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_iterable</span><span class="p">)</span>
     <span class="n">wc</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
 
     <span class="c"># prettifying the plot</span>
@@ -319,12 +321,12 @@
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">12</span><span class="p">))</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wc</span><span class="o">.</span><span class="n">recolor</span><span class="p">(</span><span class="n">color_func</span><span class="o">=</span><span class="n">image_colors</span><span class="p">))</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s">&quot;off&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s">"off"</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">();</span>
 
-<span class="n">logo_fp</span> <span class="o">=</span> <span class="s">&#39;../assets/logo-purple.png&#39;</span>
+<span class="n">logo_fp</span> <span class="o">=</span> <span class="s">'../assets/logo-purple.png'</span>
 <span class="n">create_word_cloud</span><span class="p">(</span><span class="n">match_secrets</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
-                  <span class="n">logo_fp</span><span class="p">,</span> <span class="o">**</span><span class="n">word_cloud_options</span><span class="p">);</span></code></pre></div>
+                  <span class="n">logo_fp</span><span class="p">,</span> <span class="o">**</span><span class="n">word_cloud_options</span><span class="p">);</span></code></pre></figure>
 
 <p><img src="/notebooks/quest-for-an-offensiveness-detector-part-1_files/quest-for-an-offensiveness-detector-part-1_11_0.png" alt="png" /></p>
 
@@ -344,7 +346,7 @@
 
 <p>What words appeared together in sequence?</p>
 
-<p>A simple way to address this problem is by computing ngrams. An ngram is the <code>n</code> sequence of words that appear in succession for any given piece of text. So a unigram would be a single word, a bigram would be a sequence of two words, like so:</p>
+<p>A simple way to address this problem is by computing ngrams. An ngram is the <code class="highlighter-rouge">n</code> sequence of words that appear in succession for any given piece of text. So a unigram would be a single word, a bigram would be a sequence of two words, like so:</p>
 
 <ul>
   <li>Unigram (1-gram): ‘the’</li>
@@ -355,12 +357,12 @@
 
 <p>Doing this allows us to at least capture the most frequent sequences of words.</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Defining functions to compute ngram frequency</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Defining functions to compute ngram frequency</span>
 <span class="k">def</span> <span class="nf">word_counter</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">length_thres</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
     <span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="n">tk</span> <span class="k">for</span> <span class="n">tk</span> <span class="ow">in</span> <span class="n">t</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tk</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">length_thres</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-        <span class="n">t_ngrams</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ngrams</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))]</span>
+        <span class="n">t_ngrams</span> <span class="o">=</span> <span class="p">[</span><span class="s">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ngrams</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))]</span>
         <span class="n">t</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">t_ngrams</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -372,25 +374,25 @@
 
 <span class="k">def</span> <span class="nf">count_token_frequency</span><span class="p">(</span><span class="n">token_series</span><span class="p">,</span> <span class="n">filter_thres</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">freq_df</span> <span class="o">=</span>  <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">word_aggregater</span><span class="p">(</span><span class="n">token_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-    <span class="n">freq_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s">&#39;word&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s">&#39;frequency&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="n">freq_df</span> <span class="o">=</span> <span class="n">freq_df</span><span class="p">[</span><span class="n">freq_df</span><span class="p">[</span><span class="s">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">filter_thres</span><span class="p">]</span> \
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">&#39;frequency&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-    <span class="n">freq_df</span><span class="p">[</span><span class="s">&#39;ngrams&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_df</span><span class="p">[</span><span class="s">&#39;word&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">()))</span>
+    <span class="n">freq_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s">'word'</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s">'frequency'</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">freq_df</span> <span class="o">=</span> <span class="n">freq_df</span><span class="p">[</span><span class="n">freq_df</span><span class="p">[</span><span class="s">'frequency'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">filter_thres</span><span class="p">]</span> \
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">'frequency'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">freq_df</span><span class="p">[</span><span class="s">'ngrams'</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_df</span><span class="p">[</span><span class="s">'word'</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">()))</span>
     <span class="k">return</span> <span class="n">freq_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 <span class="c"># create frequency count dataframes</span>
-<span class="n">secrets_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">match_secrets</span><span class="p">[</span><span class="s">&#39;clean_tokens_secret&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">secrets_not_reported_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">match_not_reported</span><span class="p">[</span><span class="s">&#39;clean_tokens_secret&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">secrets_reported_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">match_reported</span><span class="p">[</span><span class="s">&#39;clean_tokens_secret&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">report_text_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">report_text</span><span class="p">[</span><span class="s">&#39;clean_tokens_secret&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">secrets_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">match_secrets</span><span class="p">[</span><span class="s">'clean_tokens_secret'</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">secrets_not_reported_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">match_not_reported</span><span class="p">[</span><span class="s">'clean_tokens_secret'</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">secrets_reported_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">match_reported</span><span class="p">[</span><span class="s">'clean_tokens_secret'</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">report_text_corpus</span> <span class="o">=</span> <span class="n">count_token_frequency</span><span class="p">(</span><span class="n">report_text</span><span class="p">[</span><span class="s">'clean_tokens_secret'</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
 <span class="c"># merge frequencies for all secrets, reported, and not reported</span>
-<span class="n">merge_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;word&#39;</span><span class="p">,</span> <span class="s">&#39;frequency&#39;</span><span class="p">]</span>
-<span class="n">all_corpus</span> <span class="o">=</span> <span class="n">secrets_corpus</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">secrets_not_reported_corpus</span><span class="p">[</span><span class="n">merge_cols</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="s">&quot;word&quot;</span><span class="p">,</span>
-                                  <span class="n">how</span><span class="o">=</span><span class="s">&quot;left&quot;</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s">&quot;_all&quot;</span><span class="p">,</span> <span class="s">&quot;_not_reported&quot;</span><span class="p">))</span>
-<span class="n">all_corpus</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">secrets_reported_corpus</span><span class="p">[</span><span class="n">merge_cols</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="s">&quot;word&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">&quot;left&quot;</span><span class="p">)</span>
-<span class="n">all_corpus</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;frequency&#39;</span><span class="p">:</span> <span class="s">&#39;frequency_reported&#39;</span><span class="p">})</span>
-<span class="n">all_corpus</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></div>
+<span class="n">merge_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s">'word'</span><span class="p">,</span> <span class="s">'frequency'</span><span class="p">]</span>
+<span class="n">all_corpus</span> <span class="o">=</span> <span class="n">secrets_corpus</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">secrets_not_reported_corpus</span><span class="p">[</span><span class="n">merge_cols</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="s">"word"</span><span class="p">,</span>
+                                  <span class="n">how</span><span class="o">=</span><span class="s">"left"</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="s">"_all"</span><span class="p">,</span> <span class="s">"_not_reported"</span><span class="p">))</span>
+<span class="n">all_corpus</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">secrets_reported_corpus</span><span class="p">[</span><span class="n">merge_cols</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="s">"word"</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s">"left"</span><span class="p">)</span>
+<span class="n">all_corpus</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s">'frequency'</span><span class="p">:</span> <span class="s">'frequency_reported'</span><span class="p">})</span>
+<span class="n">all_corpus</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></figure>
 
 <div>
 <table border="1" class="dataframe">
@@ -461,14 +463,14 @@
 
 <p>As a data scientist, it’s important to do sanity checks often. Because our data as it is now is so different from how it was in the beginning, it’s important to check and double-check if the transformations we are actually performing are in fact the transformations that we intend.</p>
 
-<p>Below, we do a quick test to make sure that for each row, the sum of <code>frequency_not_reported</code> and <code>frequency_reported</code> should equal <code>frequency_all</code>. This is because the <code>frequency_not_reported</code> and <code>frequency_reported</code> categories are mutually exhaustive and mutually exclusive.</p>
+<p>Below, we do a quick test to make sure that for each row, the sum of <code class="highlighter-rouge">frequency_not_reported</code> and <code class="highlighter-rouge">frequency_reported</code> should equal <code class="highlighter-rouge">frequency_all</code>. This is because the <code class="highlighter-rouge">frequency_not_reported</code> and <code class="highlighter-rouge">frequency_reported</code> categories are mutually exhaustive and mutually exclusive.</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">secret_sum</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[[</span><span class="s">&#39;frequency_not_reported&#39;</span><span class="p">,</span> <span class="s">&#39;frequency_reported&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">not_equal</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[</span><span class="o">~</span><span class="p">(</span><span class="n">secret_sum</span> <span class="o">==</span> <span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;frequency_all&#39;</span><span class="p">])]</span>
-<span class="k">print</span> <span class="s">&quot;We should expect this to be zero!: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">not_equal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></pre></div>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">secret_sum</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[[</span><span class="s">'frequency_not_reported'</span><span class="p">,</span> <span class="s">'frequency_reported'</span><span class="p">]]</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">not_equal</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[</span><span class="o">~</span><span class="p">(</span><span class="n">secret_sum</span> <span class="o">==</span> <span class="n">all_corpus</span><span class="p">[</span><span class="s">'frequency_all'</span><span class="p">])]</span>
+<span class="k">print</span> <span class="s">"We should expect this to be zero!: </span><span class="si">%</span><span class="s">d"</span> <span class="o">%</span> <span class="n">not_equal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></pre></figure>
 
-<pre><code>We should expect this to be zero!: 0
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>We should expect this to be zero!: 0
+</code></pre></div></div>
 
 <h4 id="sanity-check-passed">Sanity check passed!</h4>
 
@@ -480,29 +482,29 @@
 
 <p>Then, we search through the cleaned confession text to find confessions that contain our top 60 (1,2,3)-ngrams. We filter those search results by selecting the top 5 confessions that have the most comments.</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># creating custom annotations for the plot</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># creating custom annotations for the plot</span>
 <span class="c"># when you hover over a specific bar on the plot,</span>
 <span class="c"># you should be able to see the top 4 posts</span>
 <span class="c"># containing that word, sorted by number of comments</span>
 
 <span class="k">def</span> <span class="nf">format_text_annotation</span><span class="p">(</span><span class="n">text_list</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">35</span><span class="p">):</span>
-    <span class="n">text_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="s">&#39;ignore&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">]</span>
-    <span class="n">text_list</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">]</span>
-    <span class="n">text_list</span> <span class="o">=</span> <span class="s">&quot;&lt;br&gt;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">t</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="k">else</span> <span class="n">t</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;...&quot;</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">])</span>
+    <span class="n">text_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">'ascii'</span><span class="p">,</span> <span class="s">'ignore'</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">]</span>
+    <span class="n">text_list</span> <span class="o">=</span> <span class="p">[</span><span class="s">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">]</span>
+    <span class="n">text_list</span> <span class="o">=</span> <span class="s">"&lt;br&gt;"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">t</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="k">else</span> <span class="n">t</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="s">"..."</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">text_list</span>
 
-<span class="k">def</span> <span class="nf">token_top_secrets</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s">&#39;comments&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">secrets</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">holysr_df</span><span class="p">[</span><span class="s">&#39;id_report&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">top_secrets</span> <span class="o">=</span> <span class="n">secrets</span><span class="p">[</span><span class="n">secrets</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span> \
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">comment_col</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[</span><span class="s">&#39;confession&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">token_top_secrets</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s">'comments'</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">secrets</span> <span class="o">=</span> <span class="n">holysr_df</span><span class="p">[</span><span class="n">holysr_df</span><span class="p">[</span><span class="s">'id_report'</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">top_secrets</span> <span class="o">=</span> <span class="n">secrets</span><span class="p">[</span><span class="n">secrets</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="nb">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span> \
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">comment_col</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[</span><span class="s">'confession'</span><span class="p">]</span>
     <span class="n">top_secrets</span> <span class="o">=</span> <span class="n">top_secrets</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_secrets</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_secrets</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">format_text_annotation</span><span class="p">(</span><span class="n">top_secrets</span><span class="p">[:</span><span class="n">n</span><span class="p">])</span>
 
-<span class="k">def</span> <span class="nf">token_reports_text</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s">&#39;comments&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
-    <span class="n">top_reports</span> <span class="o">=</span> <span class="n">report_text</span><span class="p">[</span><span class="n">report_text</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span> \
-        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">comment_col</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[</span><span class="s">&#39;confession&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">token_reports_text</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s">'comments'</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">top_reports</span> <span class="o">=</span> <span class="n">report_text</span><span class="p">[</span><span class="n">report_text</span><span class="p">[</span><span class="n">SECRET_COL</span><span class="p">]</span><span class="o">.</span><span class="nb">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span> \
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">comment_col</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[</span><span class="s">'confession'</span><span class="p">]</span>
     <span class="n">top_reports</span> <span class="o">=</span> <span class="n">top_reports</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_reports</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_reports</span><span class="p">)</span>
@@ -511,13 +513,13 @@
 <span class="c"># filter all_corpus to pick top n tokens for each ngram</span>
 <span class="n">n</span> <span class="o">=</span> <span class="mi">20</span>
 <span class="n">all_corpus</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
-    <span class="n">all_corpus</span><span class="p">[</span><span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;ngrams&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">&#39;frequency_all&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="n">n</span><span class="p">],</span>
-    <span class="n">all_corpus</span><span class="p">[</span><span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;ngrams&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">&#39;frequency_all&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="n">n</span><span class="p">],</span>
-    <span class="n">all_corpus</span><span class="p">[</span><span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;ngrams&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">&#39;frequency_all&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+    <span class="n">all_corpus</span><span class="p">[</span><span class="n">all_corpus</span><span class="p">[</span><span class="s">'ngrams'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">'frequency_all'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="n">n</span><span class="p">],</span>
+    <span class="n">all_corpus</span><span class="p">[</span><span class="n">all_corpus</span><span class="p">[</span><span class="s">'ngrams'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">'frequency_all'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="n">n</span><span class="p">],</span>
+    <span class="n">all_corpus</span><span class="p">[</span><span class="n">all_corpus</span><span class="p">[</span><span class="s">'ngrams'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">'frequency_all'</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
 <span class="p">])</span>
-<span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;top_secrets&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;word&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">token_top_secrets</span><span class="p">)</span>
-<span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;top_reports&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[</span><span class="s">&#39;word&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">token_reports_text</span><span class="p">)</span>
-<span class="n">all_corpus</span><span class="p">[[</span><span class="s">&#39;word&#39;</span><span class="p">,</span> <span class="s">&#39;top_secrets&#39;</span><span class="p">,</span> <span class="s">&#39;top_reports&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></div>
+<span class="n">all_corpus</span><span class="p">[</span><span class="s">'top_secrets'</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[</span><span class="s">'word'</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="n">token_top_secrets</span><span class="p">)</span>
+<span class="n">all_corpus</span><span class="p">[</span><span class="s">'top_reports'</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_corpus</span><span class="p">[</span><span class="s">'word'</span><span class="p">]</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="n">token_reports_text</span><span class="p">)</span>
+<span class="n">all_corpus</span><span class="p">[[</span><span class="s">'word'</span><span class="p">,</span> <span class="s">'top_secrets'</span><span class="p">,</span> <span class="s">'top_reports'</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span></code></pre></figure>
 
 <div>
 <table border="1" class="dataframe">
@@ -564,7 +566,7 @@
 </table>
 </div>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">create_bar_trace</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">graph_obj</span><span class="p">,</span> <span class="n">x_col</span><span class="p">,</span> <span class="n">y_col</span><span class="p">,</span> <span class="n">text_col</span><span class="p">,</span> <span class="o">**</span><span class="n">go_kwargs</span><span class="p">):</span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">create_bar_trace</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">graph_obj</span><span class="p">,</span> <span class="n">x_col</span><span class="p">,</span> <span class="n">y_col</span><span class="p">,</span> <span class="n">text_col</span><span class="p">,</span> <span class="o">**</span><span class="n">go_kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">graph_obj</span><span class="p">(</span>
         <span class="n">y</span><span class="o">=</span><span class="n">dataframe</span><span class="p">[</span><span class="n">x_col</span><span class="p">],</span>
         <span class="n">x</span><span class="o">=</span><span class="n">dataframe</span><span class="p">[</span><span class="n">y_col</span><span class="p">],</span>
@@ -572,23 +574,23 @@
         <span class="o">**</span><span class="n">go_kwargs</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">create_word_freq_subplot</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[]):</span>
-    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">dataframe</span><span class="p">[</span><span class="s">&#39;ngrams&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ngrams</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">dataframe</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">&#39;frequency_all&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">dataframe</span><span class="p">[</span><span class="s">'ngrams'</span><span class="p">]</span> <span class="o">==</span> <span class="n">ngrams</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">dataframe</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s">'frequency_all'</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
     <span class="n">dataframe</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">ngrams</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">gram_text</span> <span class="o">=</span> <span class="s">&quot;Unigrams&quot;</span>
+        <span class="n">gram_text</span> <span class="o">=</span> <span class="s">"Unigrams"</span>
     <span class="k">if</span> <span class="n">ngrams</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="n">gram_text</span> <span class="o">=</span> <span class="s">&quot;Bigrams&quot;</span>
+        <span class="n">gram_text</span> <span class="o">=</span> <span class="s">"Bigrams"</span>
     <span class="k">if</span> <span class="n">ngrams</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="n">gram_text</span> <span class="o">=</span> <span class="s">&quot;Trigrams&quot;</span>
+        <span class="n">gram_text</span> <span class="o">=</span> <span class="s">"Trigrams"</span>
 
-    <span class="n">trace1</span> <span class="o">=</span> <span class="n">create_bar_trace</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">,</span> <span class="s">&#39;frequency_not_reported&#39;</span><span class="p">,</span> <span class="s">&#39;word&#39;</span><span class="p">,</span>
-                              <span class="s">&#39;top_secrets&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;&lt;b&gt;</span><span class="si">%s</span><span class="s"> Not Reported&lt;/b&gt;&#39;</span> <span class="o">%</span> <span class="n">gram_text</span><span class="p">,</span>
-                              <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="n">colorlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
-    <span class="n">trace2</span> <span class="o">=</span> <span class="n">create_bar_trace</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">,</span><span class="s">&#39;frequency_reported&#39;</span><span class="p">,</span> <span class="s">&#39;word&#39;</span><span class="p">,</span>
-                              <span class="s">&#39;top_reports&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;&lt;b&gt;</span><span class="si">%s</span><span class="s"> Reported&lt;/b&gt;&#39;</span> <span class="o">%</span> <span class="n">gram_text</span><span class="p">,</span>
-                              <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;color&#39;</span><span class="p">:</span> <span class="n">colorlist</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
+    <span class="n">trace1</span> <span class="o">=</span> <span class="n">create_bar_trace</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">,</span> <span class="s">'frequency_not_reported'</span><span class="p">,</span> <span class="s">'word'</span><span class="p">,</span>
+                              <span class="s">'top_secrets'</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s">'&lt;b&gt;</span><span class="si">%</span><span class="s">s Not Reported&lt;/b&gt;'</span> <span class="o">%</span> <span class="n">gram_text</span><span class="p">,</span>
+                              <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s">'color'</span><span class="p">:</span> <span class="n">colorlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
+    <span class="n">trace2</span> <span class="o">=</span> <span class="n">create_bar_trace</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">go</span><span class="o">.</span><span class="n">Bar</span><span class="p">,</span><span class="s">'frequency_reported'</span><span class="p">,</span> <span class="s">'word'</span><span class="p">,</span>
+                              <span class="s">'top_reports'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'&lt;b&gt;</span><span class="si">%</span><span class="s">s Reported&lt;/b&gt;'</span> <span class="o">%</span> <span class="n">gram_text</span><span class="p">,</span>
+                              <span class="n">marker</span><span class="o">=</span><span class="p">{</span><span class="s">'color'</span><span class="p">:</span> <span class="n">colorlist</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">trace1</span><span class="p">,</span> <span class="n">trace2</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">data</span>
@@ -598,49 +600,49 @@
         <span class="n">fig</span><span class="o">.</span><span class="n">append_trace</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">fig</span>
 
-<span class="n">subplot1</span> <span class="o">=</span> <span class="n">create_word_freq_subplot</span><span class="p">(</span><span class="n">all_corpus</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;#bc94d3&#39;</span><span class="p">,</span> <span class="s">&#39;#8551a3&#39;</span><span class="p">])</span>
-<span class="n">subplot2</span> <span class="o">=</span> <span class="n">create_word_freq_subplot</span><span class="p">(</span><span class="n">all_corpus</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;#82ddbc&#39;</span><span class="p">,</span> <span class="s">&#39;#459b7c&#39;</span><span class="p">])</span>
-<span class="n">subplot3</span> <span class="o">=</span> <span class="n">create_word_freq_subplot</span><span class="p">(</span><span class="n">all_corpus</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;#f2d37d&#39;</span><span class="p">,</span> <span class="s">&#39;#c9a654&#39;</span><span class="p">])</span>
+<span class="n">subplot1</span> <span class="o">=</span> <span class="n">create_word_freq_subplot</span><span class="p">(</span><span class="n">all_corpus</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[</span><span class="s">'#bc94d3'</span><span class="p">,</span> <span class="s">'#8551a3'</span><span class="p">])</span>
+<span class="n">subplot2</span> <span class="o">=</span> <span class="n">create_word_freq_subplot</span><span class="p">(</span><span class="n">all_corpus</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[</span><span class="s">'#82ddbc'</span><span class="p">,</span> <span class="s">'#459b7c'</span><span class="p">])</span>
+<span class="n">subplot3</span> <span class="o">=</span> <span class="n">create_word_freq_subplot</span><span class="p">(</span><span class="n">all_corpus</span><span class="p">,</span> <span class="n">ngrams</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">colorlist</span><span class="o">=</span><span class="p">[</span><span class="s">'#f2d37d'</span><span class="p">,</span> <span class="s">'#c9a654'</span><span class="p">])</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                          <span class="n">subplot_titles</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;Unigrams&#39;</span><span class="p">,</span> <span class="s">&#39;Bigrams&#39;</span><span class="p">,</span> <span class="s">&#39;Trigrams&#39;</span><span class="p">),</span>
+                          <span class="n">subplot_titles</span><span class="o">=</span><span class="p">(</span><span class="s">'Unigrams'</span><span class="p">,</span> <span class="s">'Bigrams'</span><span class="p">,</span> <span class="s">'Trigrams'</span><span class="p">),</span>
                           <span class="n">vertical_spacing</span> <span class="o">=</span> <span class="mf">0.14</span><span class="p">);</span>
 
 <span class="n">add_subplot_fig</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot1</span><span class="p">)</span>
 <span class="n">add_subplot_fig</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot2</span><span class="p">)</span>
 <span class="n">add_subplot_fig</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subplot3</span><span class="p">)</span>
 
-<span class="n">title</span> <span class="o">=</span> <span class="s">&#39;Frequency of Words/Phrases in Mount Holyoke Confessions&#39;</span>
-<span class="n">xaxis_domain</span> <span class="o">=</span> <span class="n">fig</span><span class="p">[</span><span class="s">&#39;layout&#39;</span><span class="p">][</span><span class="s">&#39;xaxis1&#39;</span><span class="p">][</span><span class="s">&#39;domain&#39;</span><span class="p">]</span>
-<span class="n">fig</span><span class="p">[</span><span class="s">&#39;layout&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+<span class="n">title</span> <span class="o">=</span> <span class="s">'Frequency of Words/Phrases in Mount Holyoke Confessions'</span>
+<span class="n">xaxis_domain</span> <span class="o">=</span> <span class="n">fig</span><span class="p">[</span><span class="s">'layout'</span><span class="p">][</span><span class="s">'xaxis1'</span><span class="p">][</span><span class="s">'domain'</span><span class="p">]</span>
+<span class="n">fig</span><span class="p">[</span><span class="s">'layout'</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
     <span class="p">{</span>
-        <span class="s">&#39;title&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
-        <span class="s">&#39;titlefont&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;size&#39;</span><span class="p">:</span> <span class="mi">16</span><span class="p">},</span>
-        <span class="s">&#39;height&#39;</span><span class="p">:</span> <span class="mi">1200</span><span class="p">,</span>
-        <span class="s">&#39;width&#39;</span><span class="p">:</span> <span class="mi">750</span><span class="p">,</span>
-        <span class="s">&#39;barmode&#39;</span><span class="p">:</span> <span class="s">&#39;stack&#39;</span><span class="p">,</span>
-        <span class="s">&#39;margin&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;l&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">:</span> <span class="mi">155</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">&#39;pad&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
-        <span class="s">&#39;xaxis1&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s">&#39;tickangle&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">45</span>
+        <span class="s">'title'</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+        <span class="s">'titlefont'</span><span class="p">:</span> <span class="p">{</span><span class="s">'size'</span><span class="p">:</span> <span class="mi">16</span><span class="p">},</span>
+        <span class="s">'height'</span><span class="p">:</span> <span class="mi">1200</span><span class="p">,</span>
+        <span class="s">'width'</span><span class="p">:</span> <span class="mi">750</span><span class="p">,</span>
+        <span class="s">'barmode'</span><span class="p">:</span> <span class="s">'stack'</span><span class="p">,</span>
+        <span class="s">'margin'</span><span class="p">:</span> <span class="p">{</span><span class="s">'l'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">'r'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">'b'</span><span class="p">:</span> <span class="mi">155</span><span class="p">,</span> <span class="s">'t'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">'pad'</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+        <span class="s">'xaxis1'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">'tickangle'</span><span class="p">:</span> <span class="o">-</span><span class="mi">45</span>
         <span class="p">},</span>
-        <span class="s">&#39;xaxis2&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s">&#39;tickangle&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">45</span>
+        <span class="s">'xaxis2'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">'tickangle'</span><span class="p">:</span> <span class="o">-</span><span class="mi">45</span>
         <span class="p">},</span>
-        <span class="s">&#39;xaxis3&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s">&#39;tickangle&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">45</span>
+        <span class="s">'xaxis3'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">'tickangle'</span><span class="p">:</span> <span class="o">-</span><span class="mi">45</span>
         <span class="p">},</span>
-        <span class="s">&#39;legend&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s">&#39;traceorder&#39;</span><span class="p">:</span> <span class="s">&#39;normal&#39;</span>
+        <span class="s">'legend'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">'traceorder'</span><span class="p">:</span> <span class="s">'normal'</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">)</span>
-<span class="n">url</span> <span class="o">=</span> <span class="n">py</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s">&quot;confesh-exploration&quot;</span><span class="p">)</span></code></pre></div>
+<span class="n">url</span> <span class="o">=</span> <span class="n">py</span><span class="o">.</span><span class="n">iplot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s">"confesh-exploration"</span><span class="p">)</span></code></pre></figure>
 
-<pre><code>This is the format of your plot grid:
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>This is the format of your plot grid:
 [ (1,1) x1,y1 ]
 [ (2,1) x2,y2 ]
 [ (3,1) x3,y3 ]
-</code></pre>
+</code></pre></div></div>
 
 <h1 id="compare-and-contrast">Compare and Contrast</h1>
 
@@ -654,7 +656,7 @@
 
 <p>It’ll take a little bit more data smithery to get at this question in a deeper way, but for now, you can explore the distribution of unigrams, bigrams, and trigrams in the interactive frequency plots below. Click on the legend items to hide/show a particular category, and see what you get!</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">HTML</span><span class="p">(</span><span class="s">&quot;{::nomarkdown}&quot;</span> <span class="o">+</span> <span class="n">url</span><span class="o">.</span><span class="n">embed_code</span> <span class="o">+</span> <span class="s">&quot;{:/nomarkdown}&quot;</span><span class="p">)</span></code></pre></div>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">HTML</span><span class="p">(</span><span class="s">"{::nomarkdown}"</span> <span class="o">+</span> <span class="n">url</span><span class="o">.</span><span class="n">embed_code</span> <span class="o">+</span> <span class="s">"{:/nomarkdown}"</span><span class="p">)</span></code></pre></figure>
 
 <p><iframe id="igraph" scrolling="no" style="border:none;"seamless="seamless" src="https://plot.ly/~nielsbantilan/12.embed" height="1200px" width="750px"></iframe></p>
 
@@ -668,11 +670,11 @@
 
 <h2 id="more-questions">More Questions</h2>
 
-<p>As always, exploring data only leads to more questions. The next step on this quest is to see why the community is reporting a particular post. With these text data, we can start to label our confessions with something like <code>offensive</code> / <code>not offensive</code>.</p>
+<p>As always, exploring data only leads to more questions. The next step on this quest is to see why the community is reporting a particular post. With these text data, we can start to label our confessions with something like <code class="highlighter-rouge">offensive</code> / <code class="highlighter-rouge">not offensive</code>.</p>
 
 <p>Just to give you a little taste:</p>
 
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">report_text</span><span class="p">[[</span><span class="s">&#39;report_reason&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></code></pre></div>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">report_text</span><span class="p">[[</span><span class="s">'report_reason'</span><span class="p">]]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></code></pre></figure>
 
 <div>
 <table border="1" class="dataframe">

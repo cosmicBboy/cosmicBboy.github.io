@@ -9,11 +9,11 @@ permalink: /about/
 
 I am a data scientist, developer, public health geek, and lover/skeptic of tech.
 
-Went to [Oberlin College](https://home.oberlin.edu/){:target="_blank"} to study 
-biology and dance, then to 
+Went to [Oberlin College](https://home.oberlin.edu/){:target="_blank"} to study
+biology and dance, then to
 [Mailman School of Public Health](https://www.mailman.columbia.edu/){:target="_blank"}
 to learn about sociomedical science and public health informatics. Now at
-[Pegged Software](http://www.peggedsoftware.com/){:target="_blank"} in the Data 
+[Arena](https://www.arena.io/){:target="_blank"} in the Data
 Science team, where we match hospitals with healthcare workers who best fit the job.
 
 I like to ask questions of the world and build data pipelines that try to get
