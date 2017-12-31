@@ -98,16 +98,16 @@ framework of real-world use cases.
 
 1. Read a person's facebook feed and tell me whether she's likely to be
    a registered Republican or Democrat so that I can:
-   1. `action`: spread misinformation about the opposing party.
-   1. `action`: send them information about the relevant candidate's platform.
+   - `action`: spread misinformation about the opposing party.
+   - `action`: send them information about the relevant candidate's platform.
 1. Given instances of neighborhood-level arrests, tell me
    the neighorhoods with the highest chance of future crime so that
    I can:
-   1. `action`: implement a stop-and-frisk policy and increase police presence in those areas.
-   1. `action`: increase funding and support for recidivism-prevention programs.
+   - `action`: implement a stop-and-frisk policy and increase police presence in those areas.
+   - `action`: increase funding and support for recidivism-prevention programs.
 1. Look at this image of a face and tell me if he's gay or not so that I can:
-   1. `action`: identify likely candidates to send to "conversion therapy".
-   1. `action`: send him relevant information about sexual health.
+   - `action`: identify likely candidates to send to "conversion therapy".
+   - `action`: send him relevant information about sexual health.
 
 Notice that the differences in `actions` in each application can be subtle,
 and our value judgement about "rightness" or "wrongness" depend on our own
