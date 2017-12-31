@@ -32,7 +32,7 @@ Before getting into that, let's talk about the problem.
 
 # Teaching Silicon Children
 
-<img src="https://data.whicdn.com/images/42842083/large.png" width=750>
+<img src="https://data.whicdn.com/images/42842083/large.png" width="750">
 > Haley Joel Osment in the 2001 film "A.I. Artificial Intelligence"
 
 Most machine learning today comes in the form of what's called *supervised learning*.
@@ -89,7 +89,7 @@ scale out and automate the structural biases that exist in today's society.
 
 # The "Dark Side" and the "Light Side"
 
-<img src="https://pm1.narvii.com/6044/291a529cc63c7b838410a407975d709051e19305_hq.jpg" width=750>
+<img src="https://pm1.narvii.com/6044/291a529cc63c7b838410a407975d709051e19305_hq.jpg" width="750">
 > The primeval struggle between good and evil, as depicted by Darth Vader and Obi Wan Kenobi
 
 To highlight the fact that we can use the very same machine learning system for
