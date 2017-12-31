@@ -6,8 +6,8 @@
 </description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 31 Dec 2017 17:25:54 -0500</pubDate>
-    <lastBuildDate>Sun, 31 Dec 2017 17:25:54 -0500</lastBuildDate>
+    <pubDate>Sun, 31 Dec 2017 17:28:20 -0500</pubDate>
+    <lastBuildDate>Sun, 31 Dec 2017 17:28:20 -0500</lastBuildDate>
     <generator>Jekyll v3.6.2</generator>
     
       <item>
@@ -124,7 +124,7 @@ the neighorhoods with the highest chance of future crime so that
 I can:
     &lt;ul&gt;
       &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: implement a stop-and-frisk policy and increase police presence in those areas.&lt;/li&gt;
-      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: increase funding and support for recidivism-prevention programs.&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: increase funding and support for employment-based recidivism prevention programs.&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
   &lt;li&gt;Look at this image of a face and tell me if he’s gay or not so that I can:
