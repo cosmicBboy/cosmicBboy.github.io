@@ -53,7 +53,7 @@ a mapping from some input to some desired output.
 The parent-child analogy captures the fact that these machine learning systems are
 still narrow in scope and cognitive ability. They might out-perform the best of us at
 [diagnosing pneumonia](https://news.stanford.edu/2017/11/15/algorithm-outperforms-radiologists-diagnosing-pneumonia/){:target="_blank"},
-but any single machine learning system currently doesn't yet possess the faculties to
+but any single machine learning system doesn't yet possess the faculties to
 reason about a wider range of concerns such as thinking about the ethical implications
 of its own predictions.
 

@@ -6,8 +6,8 @@
 </description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 31 Dec 2017 17:28:20 -0500</pubDate>
-    <lastBuildDate>Sun, 31 Dec 2017 17:28:20 -0500</lastBuildDate>
+    <pubDate>Sun, 31 Dec 2017 17:36:11 -0500</pubDate>
+    <lastBuildDate>Sun, 31 Dec 2017 17:36:11 -0500</lastBuildDate>
     <generator>Jekyll v3.6.2</generator>
     
       <item>
@@ -64,7 +64,7 @@ the neighorhoods with the highest chance of drug-related crime (&lt;code class=&
 &lt;p&gt;The parent-child analogy captures the fact that these machine learning systems are
 still narrow in scope and cognitive ability. They might out-perform the best of us at
 &lt;a href=&quot;https://news.stanford.edu/2017/11/15/algorithm-outperforms-radiologists-diagnosing-pneumonia/&quot; target=&quot;_blank&quot;&gt;diagnosing pneumonia&lt;/a&gt;,
-but any single machine learning system currently doesn’t yet possess the faculties to
+but any single machine learning system doesn’t yet possess the faculties to
 reason about a wider range of concerns such as thinking about the ethical implications
 of its own predictions.&lt;/p&gt;
 
