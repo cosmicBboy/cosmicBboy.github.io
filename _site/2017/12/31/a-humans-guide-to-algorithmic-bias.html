@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>A Human's Guide to Algorithmic Bias</title>
+  <meta name="description" content="For the past year I’ve been doing a lot of introspecting, reading, andcritical thinking about bias in algorithms, particularly of the machine-learned variety...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://localhost:4000/2017/12/31/a-humans-guide-to-algorithmic-bias.html">
+  <link rel="alternate" type="application/rss+xml" title="CSMCBBOY" href="http://localhost:4000/feed.xml">
+
+  <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+  <!--[if lt IE 9]>
+  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">CSMCBBOY</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">A Human's Guide to Algorithmic Bias</h1>
+    <p class="post-meta"><time datetime="2017-12-31T00:00:00-05:00" itemprop="datePublished">Dec 31, 2017</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>For the past year I’ve been doing a lot of introspecting, reading, and
+critical thinking about bias in algorithms, particularly of the machine-learned variety.
+And no, I don’t mean bias in terms of the <a href="https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff" target="_blank">bias-variance decomposition</a>.
+I mean bias in the sense that <em>we’re all gonna be screwed if we don’t
+start thinking about machine learning as a tool for socioeconomic
+and political control</em>.</p>
+
+<p>This control can be explicit, for example in the infamous
+case of the <a href="https://www.propublica.org/article/machine-bias-risk-assessments-in-criminal-sentencing" target="_blank">COMPAS recidivism risk model</a>, which tells decision-makers
+the inmates who are likely to re-offend. Or it can be subtle, like when
+Facebook determines what kinds of posts to show in your feed, or when Amazon
+recommends products for you to buy.</p>
+
+<p>Applications on this spectrum of control or influence, depending on how you
+want to look at it, have a dark side that will bear itself out as we continue
+to develop machine-learning-driven tools in the context of medicine, social
+media, labor, education, and politics.</p>
+
+<p>I’ve written about this kind of machine learning bias in the context of
+<a href="http://techblog.arena.io/Responsible_Data_Science/" target="_blank">responsible data science</a>,
+but in this post I’ll articulate a general framework that I hope will help you navigate
+the world of algorithmic applications.</p>
+
+<p>Before getting into that, let’s talk about the problem.</p>
+
+<h1 id="teaching-silicon-children">Teaching Silicon Children</h1>
+
+<p>&lt;img src=”https://data.whicdn.com/images/42842083/large.png” width=750&gt;</p>
+<blockquote>
+  <p>Haley Joel Osment in the 2001 film “A.I. Artificial Intelligence”</p>
+</blockquote>
+
+<p>Most machine learning today comes in the form of what’s called <em>supervised learning</em>.
+You can think of supervised learning as us, the human parents, teaching our computationally
+gifted, silicon-based children how to recognize, process, and label patterns within a
+limited range of real-world phenomena. In other words, this class of algorithm learns
+a mapping from some input to some desired output.</p>
+
+<p><strong>Consider the following tasks:</strong></p>
+
+<ol>
+  <li>“Read a person’s facebook feed (<code class="highlighter-rouge">input</code>) and tell me whether she’s likely
+to be a registered Republican or Democrat (<code class="highlighter-rouge">output</code>)”.</li>
+  <li>“Given neighborhood-level drug-related arrests (<code class="highlighter-rouge">input</code>), tell me
+the neighorhoods with the highest chance of drug-related crime (<code class="highlighter-rouge">output</code>)”.</li>
+  <li>“Look at this image of a face (<code class="highlighter-rouge">input</code>) and tell me if she’s gay or not (<code class="highlighter-rouge">output</code>)”
+(btw this is a <a href="https://osf.io/zn79k/" target="_blank">real thing</a>).</li>
+</ol>
+
+<p>The parent-child analogy captures the fact that these machine learning systems are
+still narrow in scope and cognitive ability. They might out-perform the best of us at
+<a href="https://news.stanford.edu/2017/11/15/algorithm-outperforms-radiologists-diagnosing-pneumonia/" target="_blank">diagnosing pneumonia</a>,
+but any single machine learning system currently doesn’t yet possess the faculties to
+reason about a wider range of concerns such as thinking about the ethical implications
+of its own predictions.</p>
+
+<h1 id="modern-physiognomy">Modern Physiognomy</h1>
+
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Physiognomy.jpg" width="750" /></p>
+
+<blockquote>
+  <p><strong>Physiognomy</strong>, characterized by some as a pseudoscience, is “the assessment of character or
+personality from a person’s outer appearance, especially the face”. <em>Source: <a href="https://en.wikipedia.org/wiki/Physiognomy">Wikipedia</a></em>.</p>
+</blockquote>
+
+<p>In this sense, we can think of machine learning in the social context as a modern, more
+sophisticated version of physiognomy. This is because applying machine
+learning to socioeconomic and political systems is essentially the exercise of gathering
+measurable characteristics about people (the <code class="highlighter-rouge">inputs</code>) and ascribing higher-level classification
+systems (the <code class="highlighter-rouge">outputs</code>) to them based on correlations between the <code class="highlighter-rouge">inputs</code> and <code class="highlighter-rouge">outputs</code>.</p>
+
+<p><a href="https://www.microsoft.com/en-us/research/people/kate/" target="_blank">Kate Crawford</a> talks about this
+and bias more broadly in her <a href="https://www.youtube.com/watch?v=fMym_BKWQzk" target="_blank">keynote talk</a>
+at this year’s NIPS conference, but to put it briefly, the big problem arises when we
+start thinking more critically about classification systems and how they’re used to
+promulgate and solidify a particular social structure.</p>
+
+<p>One notable case is that of <a href="https://en.wikipedia.org/wiki/Cesare_Lombroso" target="_blank">Cesare Lombroso</a>,
+a 19th century criminologist and physician. He proposed a set of physical features that
+characterize a “born criminal”, among them, things like large jaws, a low sloping forehead,
+and handle-shaped ears.</p>
+
+<p>Although claims like these are problematic in themselves, the material consequences of
+classification systems, machine-learned or not, have to do with the <em>actions</em>,
+<em>decisions</em>, or <em>policies</em> that follow. Once we’re able to formalize and implement
+these classification systems in the form of machine learning algorithms, we can effectively
+scale out and automate the structural biases that exist in today’s society.</p>
+
+<h1 id="the-dark-side-and-the-light-side">The “Dark Side” and the “Light Side”</h1>
+
+<p>&lt;img src=”https://pm1.narvii.com/6044/291a529cc63c7b838410a407975d709051e19305_hq.jpg” width=750&gt;</p>
+<blockquote>
+  <p>The primeval struggle between good and evil, as depicted by Darth Vader and Obi Wan Kenobi</p>
+</blockquote>
+
+<p>To highlight the fact that we can use the very same machine learning system for
+benefit or harm, let’s recast the three applications that I described above in the
+framework of real-world use cases.</p>
+
+<ol>
+  <li>Read a person’s facebook feed and tell me whether she’s likely to be
+a registered Republican or Democrat so that I can:
+    <ol>
+      <li><code class="highlighter-rouge">action</code>: spread misinformation about the opposing party.</li>
+      <li><code class="highlighter-rouge">action</code>: send them information about the relevant candidate’s platform.</li>
+    </ol>
+  </li>
+  <li>Given instances of neighborhood-level arrests, tell me
+the neighorhoods with the highest chance of future crime so that
+I can:
+    <ol>
+      <li><code class="highlighter-rouge">action</code>: implement a stop-and-frisk policy and increase police presence in those areas.</li>
+      <li><code class="highlighter-rouge">action</code>: increase funding and support for recidivism-prevention programs.</li>
+    </ol>
+  </li>
+  <li>Look at this image of a face and tell me if he’s gay or not so that I can:
+    <ol>
+      <li><code class="highlighter-rouge">action</code>: identify likely candidates to send to “conversion therapy”.</li>
+      <li><code class="highlighter-rouge">action</code>: send him relevant information about sexual health.</li>
+    </ol>
+  </li>
+</ol>
+
+<p>Notice that the differences in <code class="highlighter-rouge">actions</code> in each application can be subtle,
+and our value judgement about “rightness” or “wrongness” depend on our own
+belief systems and how exactly <em>actions</em>, <em>decisions</em>, and <em>policies</em> are
+implemented.</p>
+
+<p>Quite honestly, the “dark side” and “light side” is itself a simple binary
+classification system that is often too simplistic to apply to real-world
+situations. So, as any experienced ethicist can tell you, I think the best
+we can do is to continue to ask the right questions and try to act accordingly.</p>
+
+<h1 id="question-the-system">Question the System</h1>
+
+<p>The next time you’re using Facebook, Amazon, Netflix, or any other digital product, and
+it serves you some sort of prediction about what content you might enjoy, what thing
+you might want to buy, or who you might want to connect with, ask yourself:</p>
+
+<ol>
+  <li><strong>What do the architects of this system have to gain in making this prediction?</strong></li>
+  <li><strong>What historical training data did the app use to make this prediction?</strong></li>
+  <li><strong>Are these data correlated with socially sensitive attributes like race?</strong></li>
+  <li><strong>Are any socially sensitive attributes correlated with the labels?</strong></li>
+  <li><strong>Who labelled the training data, and who decided what the labels are to begin with?</strong></li>
+  <li><strong>What kinds of characteristics about me does the system know about?</strong></li>
+  <li><strong>Is the system making this prediction because I belong to a particular social group?</strong></li>
+  <li><strong>Is the classification system underlying the predicted labels realistic?</strong></li>
+  <li><strong>How are my actions on this app being fed back into the machine learning algorithm?</strong></li>
+  <li><strong>How are the predictions influencing my own view of the world?</strong></li>
+</ol>
+
+<p>Think of these as a sort of mental vaccine to immunize yourself from taking for granted
+the fact that these useful and convenient services aren’t just here to make your life
+better. It’s all too easy to forget that these apps reflect the hopes, desires, and biases of
+its architects, who happen to be human beings too, at least for now…</p>
+
+    <div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//csmcbboy.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:niels.bantilan@gmail.com">niels.bantilan@gmail.com</a></li>
+          <li>
+            <p class="rss-subscribe">subscribe via <a href="/feed.xml">RSS</a></p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/cosmicBboy">
+    <span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span>
+    <span class="username">Github</span>
+</a>
+
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/cosmicBboy">
+    <span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span>
+    <span class="username">Twitter</span>
+</a>
+
+          </li>
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Hi, my name is Niels Bantilan. I like to be creative with code.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

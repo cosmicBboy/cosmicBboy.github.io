@@ -6,9 +6,179 @@
 </description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 28 Nov 2017 20:43:51 -0500</pubDate>
-    <lastBuildDate>Tue, 28 Nov 2017 20:43:51 -0500</lastBuildDate>
+    <pubDate>Sun, 31 Dec 2017 17:22:10 -0500</pubDate>
+    <lastBuildDate>Sun, 31 Dec 2017 17:22:10 -0500</lastBuildDate>
     <generator>Jekyll v3.6.2</generator>
+    
+      <item>
+        <title>A Human's Guide to Algorithmic Bias</title>
+        <description>&lt;p&gt;For the past year I’ve been doing a lot of introspecting, reading, and
+critical thinking about bias in algorithms, particularly of the machine-learned variety.
+And no, I don’t mean bias in terms of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff&quot; target=&quot;_blank&quot;&gt;bias-variance decomposition&lt;/a&gt;.
+I mean bias in the sense that &lt;em&gt;we’re all gonna be screwed if we don’t
+start thinking about machine learning as a tool for socioeconomic
+and political control&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;This control can be explicit, for example in the infamous
+case of the &lt;a href=&quot;https://www.propublica.org/article/machine-bias-risk-assessments-in-criminal-sentencing&quot; target=&quot;_blank&quot;&gt;COMPAS recidivism risk model&lt;/a&gt;, which tells decision-makers
+the inmates who are likely to re-offend. Or it can be subtle, like when
+Facebook determines what kinds of posts to show in your feed, or when Amazon
+recommends products for you to buy.&lt;/p&gt;
+
+&lt;p&gt;Applications on this spectrum of control or influence, depending on how you
+want to look at it, have a dark side that will bear itself out as we continue
+to develop machine-learning-driven tools in the context of medicine, social
+media, labor, education, and politics.&lt;/p&gt;
+
+&lt;p&gt;I’ve written about this kind of machine learning bias in the context of
+&lt;a href=&quot;http://techblog.arena.io/Responsible_Data_Science/&quot; target=&quot;_blank&quot;&gt;responsible data science&lt;/a&gt;,
+but in this post I’ll articulate a general framework that I hope will help you navigate
+the world of algorithmic applications.&lt;/p&gt;
+
+&lt;p&gt;Before getting into that, let’s talk about the problem.&lt;/p&gt;
+
+&lt;h1 id=&quot;teaching-silicon-children&quot;&gt;Teaching Silicon Children&lt;/h1&gt;
+
+&lt;p&gt;&amp;lt;img src=”https://data.whicdn.com/images/42842083/large.png” width=750&amp;gt;&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;Haley Joel Osment in the 2001 film “A.I. Artificial Intelligence”&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Most machine learning today comes in the form of what’s called &lt;em&gt;supervised learning&lt;/em&gt;.
+You can think of supervised learning as us, the human parents, teaching our computationally
+gifted, silicon-based children how to recognize, process, and label patterns within a
+limited range of real-world phenomena. In other words, this class of algorithm learns
+a mapping from some input to some desired output.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Consider the following tasks:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;“Read a person’s facebook feed (&lt;code class=&quot;highlighter-rouge&quot;&gt;input&lt;/code&gt;) and tell me whether she’s likely
+to be a registered Republican or Democrat (&lt;code class=&quot;highlighter-rouge&quot;&gt;output&lt;/code&gt;)”.&lt;/li&gt;
+  &lt;li&gt;“Given neighborhood-level drug-related arrests (&lt;code class=&quot;highlighter-rouge&quot;&gt;input&lt;/code&gt;), tell me
+the neighorhoods with the highest chance of drug-related crime (&lt;code class=&quot;highlighter-rouge&quot;&gt;output&lt;/code&gt;)”.&lt;/li&gt;
+  &lt;li&gt;“Look at this image of a face (&lt;code class=&quot;highlighter-rouge&quot;&gt;input&lt;/code&gt;) and tell me if she’s gay or not (&lt;code class=&quot;highlighter-rouge&quot;&gt;output&lt;/code&gt;)”
+(btw this is a &lt;a href=&quot;https://osf.io/zn79k/&quot; target=&quot;_blank&quot;&gt;real thing&lt;/a&gt;).&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The parent-child analogy captures the fact that these machine learning systems are
+still narrow in scope and cognitive ability. They might out-perform the best of us at
+&lt;a href=&quot;https://news.stanford.edu/2017/11/15/algorithm-outperforms-radiologists-diagnosing-pneumonia/&quot; target=&quot;_blank&quot;&gt;diagnosing pneumonia&lt;/a&gt;,
+but any single machine learning system currently doesn’t yet possess the faculties to
+reason about a wider range of concerns such as thinking about the ethical implications
+of its own predictions.&lt;/p&gt;
+
+&lt;h1 id=&quot;modern-physiognomy&quot;&gt;Modern Physiognomy&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://upload.wikimedia.org/wikipedia/commons/a/a6/Physiognomy.jpg&quot; width=&quot;750&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;Physiognomy&lt;/strong&gt;, characterized by some as a pseudoscience, is “the assessment of character or
+personality from a person’s outer appearance, especially the face”. &lt;em&gt;Source: &lt;a href=&quot;https://en.wikipedia.org/wiki/Physiognomy&quot;&gt;Wikipedia&lt;/a&gt;&lt;/em&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;In this sense, we can think of machine learning in the social context as a modern, more
+sophisticated version of physiognomy. This is because applying machine
+learning to socioeconomic and political systems is essentially the exercise of gathering
+measurable characteristics about people (the &lt;code class=&quot;highlighter-rouge&quot;&gt;inputs&lt;/code&gt;) and ascribing higher-level classification
+systems (the &lt;code class=&quot;highlighter-rouge&quot;&gt;outputs&lt;/code&gt;) to them based on correlations between the &lt;code class=&quot;highlighter-rouge&quot;&gt;inputs&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;outputs&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.microsoft.com/en-us/research/people/kate/&quot; target=&quot;_blank&quot;&gt;Kate Crawford&lt;/a&gt; talks about this
+and bias more broadly in her &lt;a href=&quot;https://www.youtube.com/watch?v=fMym_BKWQzk&quot; target=&quot;_blank&quot;&gt;keynote talk&lt;/a&gt;
+at this year’s NIPS conference, but to put it briefly, the big problem arises when we
+start thinking more critically about classification systems and how they’re used to
+promulgate and solidify a particular social structure.&lt;/p&gt;
+
+&lt;p&gt;One notable case is that of &lt;a href=&quot;https://en.wikipedia.org/wiki/Cesare_Lombroso&quot; target=&quot;_blank&quot;&gt;Cesare Lombroso&lt;/a&gt;,
+a 19th century criminologist and physician. He proposed a set of physical features that
+characterize a “born criminal”, among them, things like large jaws, a low sloping forehead,
+and handle-shaped ears.&lt;/p&gt;
+
+&lt;p&gt;Although claims like these are problematic in themselves, the material consequences of
+classification systems, machine-learned or not, have to do with the &lt;em&gt;actions&lt;/em&gt;,
+&lt;em&gt;decisions&lt;/em&gt;, or &lt;em&gt;policies&lt;/em&gt; that follow. Once we’re able to formalize and implement
+these classification systems in the form of machine learning algorithms, we can effectively
+scale out and automate the structural biases that exist in today’s society.&lt;/p&gt;
+
+&lt;h1 id=&quot;the-dark-side-and-the-light-side&quot;&gt;The “Dark Side” and the “Light Side”&lt;/h1&gt;
+
+&lt;p&gt;&amp;lt;img src=”https://pm1.narvii.com/6044/291a529cc63c7b838410a407975d709051e19305_hq.jpg” width=750&amp;gt;&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;The primeval struggle between good and evil, as depicted by Darth Vader and Obi Wan Kenobi&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;To highlight the fact that we can use the very same machine learning system for
+benefit or harm, let’s recast the three applications that I described above in the
+framework of real-world use cases.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Read a person’s facebook feed and tell me whether she’s likely to be
+a registered Republican or Democrat so that I can:
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: spread misinformation about the opposing party.&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: send them information about the relevant candidate’s platform.&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Given instances of neighborhood-level arrests, tell me
+the neighorhoods with the highest chance of future crime so that
+I can:
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: implement a stop-and-frisk policy and increase police presence in those areas.&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: increase funding and support for recidivism-prevention programs.&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Look at this image of a face and tell me if he’s gay or not so that I can:
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: identify likely candidates to send to “conversion therapy”.&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt;: send him relevant information about sexual health.&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Notice that the differences in &lt;code class=&quot;highlighter-rouge&quot;&gt;actions&lt;/code&gt; in each application can be subtle,
+and our value judgement about “rightness” or “wrongness” depend on our own
+belief systems and how exactly &lt;em&gt;actions&lt;/em&gt;, &lt;em&gt;decisions&lt;/em&gt;, and &lt;em&gt;policies&lt;/em&gt; are
+implemented.&lt;/p&gt;
+
+&lt;p&gt;Quite honestly, the “dark side” and “light side” is itself a simple binary
+classification system that is often too simplistic to apply to real-world
+situations. So, as any experienced ethicist can tell you, I think the best
+we can do is to continue to ask the right questions and try to act accordingly.&lt;/p&gt;
+
+&lt;h1 id=&quot;question-the-system&quot;&gt;Question the System&lt;/h1&gt;
+
+&lt;p&gt;The next time you’re using Facebook, Amazon, Netflix, or any other digital product, and
+it serves you some sort of prediction about what content you might enjoy, what thing
+you might want to buy, or who you might want to connect with, ask yourself:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;What do the architects of this system have to gain in making this prediction?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;What historical training data did the app use to make this prediction?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Are these data correlated with socially sensitive attributes like race?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Are any socially sensitive attributes correlated with the labels?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Who labelled the training data, and who decided what the labels are to begin with?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;What kinds of characteristics about me does the system know about?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Is the system making this prediction because I belong to a particular social group?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Is the classification system underlying the predicted labels realistic?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;How are my actions on this app being fed back into the machine learning algorithm?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;How are the predictions influencing my own view of the world?&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Think of these as a sort of mental vaccine to immunize yourself from taking for granted
+the fact that these useful and convenient services aren’t just here to make your life
+better. It’s all too easy to forget that these apps reflect the hopes, desires, and biases of
+its architects, who happen to be human beings too, at least for now…&lt;/p&gt;
+</description>
+        <pubDate>Sun, 31 Dec 2017 00:00:00 -0500</pubDate>
+        <link>http://localhost:4000/2017/12/31/a-humans-guide-to-algorithmic-bias.html</link>
+        <guid isPermaLink="true">http://localhost:4000/2017/12/31/a-humans-guide-to-algorithmic-bias.html</guid>
+        
+        <category>python</category>
+        
+        <category>notebook</category>
+        
+        
+      </item>
     
       <item>
         <title>What is the Cost of Civil War?</title>
