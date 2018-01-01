@@ -25,7 +25,7 @@ media, labor, education, and politics.
 
 I've written about this kind of machine learning bias in the context of
 [responsible data science](http://techblog.arena.io/Responsible_Data_Science/){:target="_blank"},
-but in this post I'll articulate a general framework that I hope will help you navigate
+but in this post I'll articulate a general set of questions that I hope will help you navigate
 the world of algorithmic applications.
 
 Before getting into that, let's talk about the problem.
@@ -117,7 +117,8 @@ implemented.
 Quite honestly, the "dark side" and "light side" is itself a simple binary
 classification system that is often too simplistic to apply to real-world
 situations. So, as any experienced ethicist can tell you, I think the best
-we can do is to continue to ask the right questions and try to act accordingly.
+we can do is to continue to ask the right questions, come up with a necessarily
+incomplete but constantly evolving set of answers, and try to act accordingly.
 
 # Question the System
 
@@ -125,9 +126,9 @@ The next time you're using Facebook, Amazon, Netflix, or any other digital produ
 it serves you some sort of prediction about what content you might enjoy, what thing
 you might want to buy, or who you might want to connect with, ask yourself:
 
-1. **What do the architects of this system have to gain in making this prediction?**
 1. **What historical training data did the app use to make this prediction?**
 1. **Are these data correlated with socially sensitive attributes like race?**
+1. **What do the architects of this system have to gain in making this prediction?**
 1. **Are any socially sensitive attributes correlated with the labels?**
 1. **Who labelled the training data, and who decided what the labels are to begin with?**
 1. **What kinds of characteristics about me does the system know about?**

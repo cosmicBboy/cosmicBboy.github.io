@@ -6,8 +6,8 @@
 </description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 31 Dec 2017 17:36:11 -0500</pubDate>
-    <lastBuildDate>Sun, 31 Dec 2017 17:36:11 -0500</lastBuildDate>
+    <pubDate>Mon, 01 Jan 2018 12:08:24 -0500</pubDate>
+    <lastBuildDate>Mon, 01 Jan 2018 12:08:24 -0500</lastBuildDate>
     <generator>Jekyll v3.6.2</generator>
     
       <item>
@@ -32,7 +32,7 @@ media, labor, education, and politics.&lt;/p&gt;
 
 &lt;p&gt;I’ve written about this kind of machine learning bias in the context of
 &lt;a href=&quot;http://techblog.arena.io/Responsible_Data_Science/&quot; target=&quot;_blank&quot;&gt;responsible data science&lt;/a&gt;,
-but in this post I’ll articulate a general framework that I hope will help you navigate
+but in this post I’ll articulate a general set of questions that I hope will help you navigate
 the world of algorithmic applications.&lt;/p&gt;
 
 &lt;p&gt;Before getting into that, let’s talk about the problem.&lt;/p&gt;
@@ -143,7 +143,8 @@ implemented.&lt;/p&gt;
 &lt;p&gt;Quite honestly, the “dark side” and “light side” is itself a simple binary
 classification system that is often too simplistic to apply to real-world
 situations. So, as any experienced ethicist can tell you, I think the best
-we can do is to continue to ask the right questions and try to act accordingly.&lt;/p&gt;
+we can do is to continue to ask the right questions, come up with a necessarily
+incomplete but constantly evolving set of answers, and try to act accordingly.&lt;/p&gt;
 
 &lt;h1 id=&quot;question-the-system&quot;&gt;Question the System&lt;/h1&gt;
 
@@ -152,9 +153,9 @@ it serves you some sort of prediction about what content you might enjoy, what t
 you might want to buy, or who you might want to connect with, ask yourself:&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;What do the architects of this system have to gain in making this prediction?&lt;/strong&gt;&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;What historical training data did the app use to make this prediction?&lt;/strong&gt;&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Are these data correlated with socially sensitive attributes like race?&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;What do the architects of this system have to gain in making this prediction?&lt;/strong&gt;&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Are any socially sensitive attributes correlated with the labels?&lt;/strong&gt;&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;Who labelled the training data, and who decided what the labels are to begin with?&lt;/strong&gt;&lt;/li&gt;
   &lt;li&gt;&lt;strong&gt;What kinds of characteristics about me does the system know about?&lt;/strong&gt;&lt;/li&gt;
