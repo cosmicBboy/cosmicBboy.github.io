@@ -10,7 +10,7 @@ requirements:
 
 serve:
 	# make sure to use python 2.7
-	bundle exec jekyll serve
+	bundle exec jekyll build
 
 serve-drafts:
 	bundle exec jekyll serve --drafts

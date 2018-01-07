@@ -17,3 +17,6 @@ github_username:  cosmicBboy
 
 # Build settings
 markdown: kramdown
+
+# Google Analytics
+google_analytics: UA-71018060-1
