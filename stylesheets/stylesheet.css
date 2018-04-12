@@ -53,15 +53,37 @@ body {
   font-size: 1em;
   line-height: 1.5;
   color: #6d6d6d;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-  background: #e7e7e7 url(../images/body-bg.png) 0 0 repeat;
+  background: white;
 }
 
 a {
-  color: #1756a9;
+  color: #3a3a3a;
 }
 a:hover {
-  color: #154A90;
+  color: #3a3a3a;
+  text-decoration: none;
+}
+a:visited {
+  color: #69478e;
+}
+
+a.site-title, a.site-title:hover, a.site-title:visited {
+  color: transparent;
+  text-shadow: none;
+}
+
+.site-header {
+  border-top: none;
+  border-bottom: none;
+}
+
+.site-footer {
+  border-top: none;
+  background: none;
+}
+
+.post-list {
+  margin-top: 50px;
 }
 
 header {
@@ -246,7 +268,7 @@ h1 {
 }
 
 h2 {
-  margin-bottom: 8px;
+  margin-bottom: 0px;
   font-size: 22px;
   font-weight: bold;
   color: #303030;

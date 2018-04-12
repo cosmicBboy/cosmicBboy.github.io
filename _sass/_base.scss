@@ -38,6 +38,15 @@ ul, ol, dl, figure,
     margin-bottom: $spacing-unit / 2;
 }
 
+h1 {
+    font-size: 34px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: $spacing-unit * 1.5;
+    text-align: center;
+}
+
 
 
 /**
@@ -89,7 +98,7 @@ h1, h2, h3, h4, h5, h6 {
 
 header {
     padding-top: 35px;
-    padding-bottom: 25px;
+    padding-bottom: 10px;
     text-align: center;
 }
 
@@ -116,10 +125,14 @@ a {
 
     &:hover {
         color: $text-color;
-        text-decoration: underline;
+        text-decoration: none;
     }
 }
 
+a.site-title, a.site-title:hover, a.site-title:visited {
+  color: transparent;
+  text-shadow: none;
+}
 
 
 /**

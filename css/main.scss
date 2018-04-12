@@ -8,19 +8,19 @@
 
 // Our variables
 $base-font-family: "Open Sans", Helvetica, Arial, sans-serif;
-$base-font-size:   20px;
+$base-font-size:   18px;
 $base-font-weight: 100;
-$small-font-size:  $base-font-size * 0.875;
+$small-font-size:  $base-font-size * 0.75;
 $base-line-height: 1.5;
 $header-font-weight: bold;
-$header-font-family: Montserrat;
+$header-font-family: Chivo;
 
 $spacing-unit:     30px;
 
 $text-color:       #111;
 $background-color: #fdfdfd;
-$background:       #e7e7e7 url(../images/body-bg.png) 0 0 repeat;
-$brand-color:      #2a7ae2;
+$background:       white;
+$brand-color:      #7e4db7;
 
 $grey-color:       #828282;
 $grey-color-light: lighten($grey-color, 40%);

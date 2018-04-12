@@ -2,8 +2,8 @@
  * Site header
  */
 .site-header {
-    border-top: 5px solid $grey-color-dark;
-    border-bottom: 1px solid $grey-color-light;
+    border-top: none;
+    border-bottom: none;
     min-height: 56px;
     font-size: 20px;
     font: $base-font-weight #{$base-font-size}/#{$base-line-height} $base-font-family;
@@ -13,16 +13,22 @@
 }
 
 .site-title {
+    color: transparent;
     font-size: 26px;
     font-weight: 300;
-    line-height: 56px;
+    line-height: 60px;
     letter-spacing: -1px;
     margin-bottom: 0;
     float: left;
+    background: url('/assets/cosmicbboy-icon.svg');
+    background-size: cover;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
 
     &,
     &:visited {
-        color: $grey-color-dark;
+        color: transparent;
     }
 }
 
@@ -100,7 +106,7 @@
  * Site footer
  */
 .site-footer {
-    border-top: 1px solid $grey-color-light;
+    border-top: none;
     padding: $spacing-unit 0;
 }
 
@@ -170,7 +176,7 @@ footer {
   margin-top: 40px;
   font-size: 13px;
   color: #aaa;
-  background: transparent url('../images/hr.png') 0 0 no-repeat;
+  background: white;
 }
 
 footer a {
@@ -212,7 +218,7 @@ footer a:hover {
 
 .post-link {
     display: block;
-    font-size: 24px;
+    font-size: 20px;
 }
 
 .profile-pic {

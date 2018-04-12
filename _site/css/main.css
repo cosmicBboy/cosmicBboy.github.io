@@ -9,10 +9,14 @@ table.dataframe td, th { border-color: #cbd2d6; border-style: solid; padding: 5p
 body, h1, h2, h3, h4, h5, h6, p, blockquote, pre, hr, dl, dd, ol, ul, figure { margin: 0; padding: 0; }
 
 /** Basic styling */
-body { font: 100 20px/1.5 "Open Sans", Helvetica, Arial, sans-serif; color: #111; background-color: #fdfdfd; background: #e7e7e7 url(../images/body-bg.png) 0 0 repeat; -webkit-text-size-adjust: 100%; -webkit-font-feature-settings: "kern" 1; -moz-font-feature-settings: "kern" 1; -o-font-feature-settings: "kern" 1; font-feature-settings: "kern" 1; font-kerning: normal; }
+body { font: 100 18px/1.5 "Open Sans", Helvetica, Arial, sans-serif; color: #111; background-color: #fdfdfd; background: white; -webkit-text-size-adjust: 100%; -webkit-font-feature-settings: "kern" 1; -moz-font-feature-settings: "kern" 1; -o-font-feature-settings: "kern" 1; font-feature-settings: "kern" 1; font-kerning: normal; }
 
 /** Set `margin-bottom` to maintain vertical rhythm */
 h1, h2, h3, h4, h5, h6, p, blockquote, pre, ul, ol, dl, figure, .highlight { margin-bottom: 15px; }
+
+h1 { font-size: 34px; }
+
+h1, h2, h3, h4, h5, h6 { margin-top: 45px; text-align: center; }
 
 /** Images */
 img { max-width: 100%; vertical-align: middle; }
@@ -20,7 +24,7 @@ img { max-width: 100%; vertical-align: middle; }
 /** Figures */
 figure > img { display: block; }
 
-figcaption { font-size: 17.5px; }
+figcaption { font-size: 13.5px; }
 
 /** Lists */
 ul, ol { margin-left: 30px; }
@@ -28,16 +32,18 @@ ul, ol { margin-left: 30px; }
 li > ul, li > ol { margin-bottom: 0; }
 
 /** Headings */
-h1, h2, h3, h4, h5, h6 { font-family: Montserrat; font-weight: bold; }
+h1, h2, h3, h4, h5, h6 { font-family: Chivo; font-weight: bold; }
 
-header { padding-top: 35px; padding-bottom: 25px; text-align: center; }
+header { padding-top: 35px; padding-bottom: 10px; text-align: center; }
 
 header h1 { font-family: 'Chivo', 'Helvetica Neue', Helvetica, Arial, serif; font-size: 48px; font-weight: 900; line-height: 1.2; color: #303030; letter-spacing: -1px; }
 
 /** Links */
-a { color: #2a7ae2; text-decoration: none; }
-a:visited { color: #1756a9; }
-a:hover { color: #111; text-decoration: underline; }
+a { color: #7e4db7; text-decoration: none; }
+a:visited { color: #593583; }
+a:hover { color: #111; text-decoration: none; }
+
+a.site-title, a.site-title:hover, a.site-title:visited { color: transparent; text-shadow: none; }
 
 /** Blockquotes */
 blockquote { color: #828282; border-left: 4px solid #e8e8e8; padding-left: 15px; font-size: 18px; letter-spacing: -1px; font-style: italic; }
@@ -63,10 +69,10 @@ pre > code { border: 0; padding-right: 0; padding-left: 0; }
 .icon > svg path { fill: #828282; }
 
 /** Site header */
-.site-header { border-top: 5px solid #424242; border-bottom: 1px solid #e8e8e8; min-height: 56px; font-size: 20px; font: 100 20px/1.5 "Open Sans", Helvetica, Arial, sans-serif; position: relative; }
+.site-header { border-top: none; border-bottom: none; min-height: 56px; font-size: 20px; font: 100 18px/1.5 "Open Sans", Helvetica, Arial, sans-serif; position: relative; }
 
-.site-title { font-size: 26px; font-weight: 300; line-height: 56px; letter-spacing: -1px; margin-bottom: 0; float: left; }
-.site-title, .site-title:visited { color: #424242; }
+.site-title { color: transparent; font-size: 26px; font-weight: 300; line-height: 60px; letter-spacing: -1px; margin-bottom: 0; float: left; background: url("/assets/cosmicbboy-icon.svg"); background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+.site-title, .site-title:visited { color: transparent; }
 
 .site-nav { float: right; line-height: 56px; }
 .site-nav .menu-icon { display: none; }
@@ -82,7 +88,7 @@ pre > code { border: 0; padding-right: 0; padding-left: 0; }
   .site-nav .page-link:not(:last-child) { margin-right: 0; } }
 
 /** Site footer */
-.site-footer { border-top: 1px solid #e8e8e8; padding: 30px 0; }
+.site-footer { border-top: none; padding: 30px 0; }
 
 .footer-heading { font-size: 18px; margin-bottom: 15px; }
 
@@ -101,7 +107,7 @@ pre > code { border: 0; padding-right: 0; padding-left: 0; }
 @media screen and (max-width: 800px) { .footer-col-1, .footer-col-2 { width: -webkit-calc(50% - (30px / 2)); width: calc(50% - (30px / 2)); }
   .footer-col-3 { width: -webkit-calc(100% - (30px / 2)); width: calc(100% - (30px / 2)); } }
 @media screen and (max-width: 600px) { .footer-col { float: none; width: -webkit-calc(100% - (30px / 2)); width: calc(100% - (30px / 2)); } }
-footer { padding-top: 20px; padding-bottom: 30px; margin-top: 40px; font-size: 13px; color: #aaa; background: transparent url("../images/hr.png") 0 0 no-repeat; }
+footer { padding-top: 20px; padding-bottom: 30px; margin-top: 40px; font-size: 13px; color: #aaa; background: white; }
 
 footer a { color: #666; }
 
@@ -117,9 +123,9 @@ footer a:hover { color: #444; }
 .post-list { text-align: center; margin-left: 0; list-style: none; }
 .post-list > li { margin-bottom: 30px; }
 
-.post-meta { font-size: 17.5px; color: #828282; }
+.post-meta { font-size: 13.5px; color: #828282; }
 
-.post-link { display: block; font-size: 24px; }
+.post-link { display: block; font-size: 20px; }
 
 .profile-pic { margin-left: auto; margin-right: auto; padding-bottom: 25px; width: 250px; }
 
