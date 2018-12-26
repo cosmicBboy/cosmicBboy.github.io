@@ -6,9 +6,9 @@
 </description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 13 Apr 2018 15:49:10 -0400</pubDate>
-    <lastBuildDate>Fri, 13 Apr 2018 15:49:10 -0400</lastBuildDate>
-    <generator>Jekyll v3.7.3</generator>
+    <pubDate>Tue, 25 Dec 2018 21:40:28 -0500</pubDate>
+    <lastBuildDate>Tue, 25 Dec 2018 21:40:28 -0500</lastBuildDate>
+    <generator>Jekyll v3.7.4</generator>
     
       <item>
         <title>A Human's Guide to Algorithmic Bias</title>
