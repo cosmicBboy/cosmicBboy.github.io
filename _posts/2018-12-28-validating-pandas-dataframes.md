@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "2018-12-28-validating-pandas-dataframes"
+title: "Validating your Personal Relationship with Pandas DataFrames"
 tags:
     - python
     - notebook
@@ -63,13 +63,13 @@ logging.disable(logging.WARNING)
 # utility function to print python output as markdown snippets
 def print_output(s):
     display(Markdown("```python\n{}\n```".format(s)))
-    
+
 %matplotlib inline
 {% endhighlight %}
 
 
 {% highlight python %}
-# define date range 
+# define date range
 DATE_RANGE = ("2018/12/01", "2018/12/31")
 
 client = Socrata("data.cityofnewyork.us", None)
@@ -248,7 +248,7 @@ for i in range(MAX_PAGES):
     if len(results) < LIMIT:
         break
 
-        
+
 df_311 = pd.DataFrame.from_records(records)[cols]
 df_311 = df_311.astype(usecols)
 display(df_311.head(3))
@@ -321,8 +321,8 @@ display(df_311.head(3))
 </div>
 
 
-Wait, but we can do even better! Based on the project requirements and what we know about 
-these data either by reading the [documentation](https://dev.socrata.com/foundry/data.cityofnewyork.us/fhrw-4uyv) or doing some 
+Wait, but we can do even better! Based on the project requirements and what we know about
+these data either by reading the [documentation](https://dev.socrata.com/foundry/data.cityofnewyork.us/fhrw-4uyv) or doing some
 exploratory data analysis, we can make some stricter assertions
 about them. We can do this very simply with `pandera`.
 
@@ -359,7 +359,7 @@ Check(lambda x: x in ["category_1", "category_2"]);
 ```
 
 You can create vectorized checks by specifying `element_wise=False` (`True` by default), which
-changes the expected function signature to `s -> Bool|Series[Bool]`, where `s` is a pandas 
+changes the expected function signature to `s -> Bool|Series[Bool]`, where `s` is a pandas
 `Series` and the return value can either be `Bool` or a boolean `Series`.
 
 ```python
@@ -370,7 +370,7 @@ Check(lambda s: s.mean() > 0.5, element_wise=False);
 Check(lambda s: s > 0, element_wise=False);
 ```
 
-For human-friendly error messages, you can also supply an `error` argument with the message 
+For human-friendly error messages, you can also supply an `error` argument with the message
 to raise if the check fails. We can check this functionality out with a `SeriesSchema`, which
 has a similar API to the `DataFrameSchema`.
 
@@ -411,7 +411,7 @@ date_range_check = Check(
 date_min_check = Check(
     lambda s: s >= pd.Timestamp(DATE_RANGE[0]),
     element_wise=False)
-                   
+
 BOROUGHS = [
     "BROOKLYN",
     "QUEENS",
@@ -419,7 +419,7 @@ BOROUGHS = [
     "MANHATTAN",
     "STATEN ISLAND",
     "Unspecified"]
-    
+
 # constructing a schema should feel familiar for pandas users
 df_311_schema = DataFrameSchema({
     # make sure unique_key is unique
@@ -442,7 +442,7 @@ Once we've defined the `DataFrameSchema`, we can use it to verify the data.
 I usually take this opportunity to create a preprocessing function that does some basic
 filtering/transformations. In this case I'm going to assume that records with
 `closed_date < created_date` are malformed data. There may some good reason the data is
-this way, but for now so I'll be removing them from the analysis. 
+this way, but for now so I'll be removing them from the analysis.
 
 
 {% highlight python %}
@@ -521,18 +521,18 @@ except Exception as e:
 ```python
 column 'complaint_type' not in dataframe
   unique_key    borough                              agency_name created_date  \
-0   41072528     QUEENS  Department of Health and Mental Hygiene   2018-12-01   
-1   41073153     QUEENS  Department of Health and Mental Hygiene   2018-12-01   
-2   41078328  MANHATTAN  Department of Health and Mental Hygiene   2018-12-01   
-3   41078347     QUEENS  Department of Health and Mental Hygiene   2018-12-01   
-4   41078591   BROOKLYN  Department of Health and Mental Hygiene   2018-12-01   
+0   41072528     QUEENS  Department of Health and Mental Hygiene   2018-12-01
+1   41073153     QUEENS  Department of Health and Mental Hygiene   2018-12-01
+2   41078328  MANHATTAN  Department of Health and Mental Hygiene   2018-12-01
+3   41078347     QUEENS  Department of Health and Mental Hygiene   2018-12-01
+4   41078591   BROOKLYN  Department of Health and Mental Hygiene   2018-12-01
 
-             due_date closed_date  
-0 2018-12-31 01:59:50  2018-12-07  
-1 2018-12-31 00:29:24  2018-12-07  
-2 2018-12-31 09:20:35  2018-10-17  
-3 2018-12-31 13:51:12  2018-12-05  
-4 2018-12-31 10:54:26  2018-12-04  
+             due_date closed_date
+0 2018-12-31 01:59:50  2018-12-07
+1 2018-12-31 00:29:24  2018-12-07
+2 2018-12-31 09:20:35  2018-10-17
+3 2018-12-31 13:51:12  2018-12-05
+4 2018-12-31 10:54:26  2018-12-04
 ```
 
 
@@ -568,7 +568,7 @@ def processing_function(df):
 To obtain the three insights that we need to create our monthly report, we need
 to manipulate the data. There's no single workflow for adding guard rails around your
 data manipulation code, but a good rule of thumb is to compose a sequence of functions
-together to do it. We can then use these functions as scaffolding to verify the 
+together to do it. We can then use these functions as scaffolding to verify the
 dataframe inputs/outputs of a function before they’re passed onto the next one.
 
 First we clean up the `complaint_type` column in order to address the first
@@ -604,8 +604,8 @@ def clean_complaint_type(df):
         .replace({"complaint_type_clean": REPLACE_DICT})
     )
     return clean_complaint_schema.validate(clean_df)
-    
-    
+
+
 clean_complaint_type(df_311).head(3)
 {% endhighlight %}
 
@@ -686,7 +686,7 @@ the `due_date`. We'll need this derived data when answering the second question:
 
 > 2. The proportion of service requests that are closed on or before the due date
   by responding agency.
-  
+
 In this case, we'll use the `check_output` decorator as a convenience to validate
 the output of the function (which is assumed to be a dataframe).
 
@@ -919,7 +919,7 @@ dataframe/series to check.
 @check_input(schema, 1)
 def my_function(x, dataframe):
     ...
-    
+
 @check_input(schema, "dataframe")
 def my_function(x, dataframe):
     ...
@@ -1049,7 +1049,7 @@ def agg_proportion_by_agency(clean_df):
         .reset_index("agency_name")
         .query("proportion_closed_on_time > 0")
     )
-    
+
 
 @check_input(proportion_by_agency_schema)
 def plot_proportion_by_agency(proportion_by_agency_df):
@@ -1141,5 +1141,5 @@ useful features coming down the road, like built-in hypothesis testing, multi-co
 validation, and multi-index column and index validation.
 
 On a personal note, I’ve found that it takes a little more discipline to add these
-validation checks to my code, but I’m already seeing the benefits of doing so in my 
+validation checks to my code, but I’m already seeing the benefits of doing so in my
 professional and side-project code. Thanks for reading, and feel free to try `pandera` out!

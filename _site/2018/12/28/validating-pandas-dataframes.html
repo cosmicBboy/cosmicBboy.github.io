@@ -68,7 +68,7 @@
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">2018-12-28-validating-pandas-dataframes</h1>
+    <h1 class="post-title" itemprop="name headline">Validating your Personal Relationship with Pandas DataFrames</h1>
     <p class="post-meta"><time datetime="2018-12-28T00:00:00-05:00" itemprop="datePublished">Dec 28, 2018</time></p>
   </header>
 
@@ -131,10 +131,10 @@ summary statistics.</p>
 <span class="c"># utility function to print python output as markdown snippets</span>
 <span class="k">def</span> <span class="nf">print_output</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="n">display</span><span class="p">(</span><span class="n">Markdown</span><span class="p">(</span><span class="s">"```python</span><span class="se">\n</span><span class="s">{}</span><span class="se">\n</span><span class="s">```"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span>
-    
+
 <span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># define date range </span>
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># define date range</span>
 <span class="n">DATE_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="s">"2018/12/01"</span><span class="p">,</span> <span class="s">"2018/12/31"</span><span class="p">)</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">Socrata</span><span class="p">(</span><span class="s">"data.cityofnewyork.us"</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
@@ -305,7 +305,7 @@ explicitly specify the columns we want to use, and what type we expect them to b
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">LIMIT</span><span class="p">:</span>
         <span class="k">break</span>
 
-        
+
 <span class="n">df_311</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">records</span><span class="p">)[</span><span class="n">cols</span><span class="p">]</span>
 <span class="n">df_311</span> <span class="o">=</span> <span class="n">df_311</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">usecols</span><span class="p">)</span>
 <span class="n">display</span><span class="p">(</span><span class="n">df_311</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span></code></pre></figure>
@@ -376,8 +376,8 @@ explicitly specify the columns we want to use, and what type we expect them to b
 </table>
 </div>
 
-<p>Wait, but we can do even better! Based on the project requirements and what we know about 
-these data either by reading the <a href="https://dev.socrata.com/foundry/data.cityofnewyork.us/fhrw-4uyv">documentation</a> or doing some 
+<p>Wait, but we can do even better! Based on the project requirements and what we know about
+these data either by reading the <a href="https://dev.socrata.com/foundry/data.cityofnewyork.us/fhrw-4uyv">documentation</a> or doing some
 exploratory data analysis, we can make some stricter assertions
 about them. We can do this very simply with <code class="highlighter-rouge">pandera</code>.</p>
 
@@ -410,7 +410,7 @@ the column are in a pre-specified set of categories.</p>
 </code></pre></div></div>
 
 <p>You can create vectorized checks by specifying <code class="highlighter-rouge">element_wise=False</code> (<code class="highlighter-rouge">True</code> by default), which
-changes the expected function signature to <code class="highlighter-rouge">s -&gt; Bool|Series[Bool]</code>, where <code class="highlighter-rouge">s</code> is a pandas 
+changes the expected function signature to <code class="highlighter-rouge">s -&gt; Bool|Series[Bool]</code>, where <code class="highlighter-rouge">s</code> is a pandas
 <code class="highlighter-rouge">Series</code> and the return value can either be <code class="highlighter-rouge">Bool</code> or a boolean <code class="highlighter-rouge">Series</code>.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># the checking function resolves to a boolean</span>
@@ -420,7 +420,7 @@ changes the expected function signature to <code class="highlighter-rouge">s -&g
 <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">);</span>
 </code></pre></div></div>
 
-<p>For human-friendly error messages, you can also supply an <code class="highlighter-rouge">error</code> argument with the message 
+<p>For human-friendly error messages, you can also supply an <code class="highlighter-rouge">error</code> argument with the message
 to raise if the check fails. We can check this functionality out with a <code class="highlighter-rouge">SeriesSchema</code>, which
 has a similar API to the <code class="highlighter-rouge">DataFrameSchema</code>.</p>
 
@@ -453,7 +453,7 @@ specifies the schema for the 311 data.</p>
 <span class="n">date_min_check</span> <span class="o">=</span> <span class="n">Check</span><span class="p">(</span>
     <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
     <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-                   
+
 <span class="n">BOROUGHS</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s">"BROOKLYN"</span><span class="p">,</span>
     <span class="s">"QUEENS"</span><span class="p">,</span>
@@ -461,7 +461,7 @@ specifies the schema for the 311 data.</p>
     <span class="s">"MANHATTAN"</span><span class="p">,</span>
     <span class="s">"STATEN ISLAND"</span><span class="p">,</span>
     <span class="s">"Unspecified"</span><span class="p">]</span>
-    
+
 <span class="c"># constructing a schema should feel familiar for pandas users</span>
 <span class="n">df_311_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
     <span class="c"># make sure unique_key is unique</span>
@@ -542,18 +542,18 @@ range due to a datetime parsing error, we receive a useful error message.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">column</span> <span class="s">'complaint_type'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataframe</span>
   <span class="n">unique_key</span>    <span class="n">borough</span>                              <span class="n">agency_name</span> <span class="n">created_date</span>  \
-<span class="mi">0</span>   <span class="mi">41072528</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
-<span class="mi">1</span>   <span class="mi">41073153</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
-<span class="mi">2</span>   <span class="mi">41078328</span>  <span class="n">MANHATTAN</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
-<span class="mi">3</span>   <span class="mi">41078347</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
-<span class="mi">4</span>   <span class="mi">41078591</span>   <span class="n">BROOKLYN</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
+<span class="mi">0</span>   <span class="mi">41072528</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>
+<span class="mi">1</span>   <span class="mi">41073153</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>
+<span class="mi">2</span>   <span class="mi">41078328</span>  <span class="n">MANHATTAN</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>
+<span class="mi">3</span>   <span class="mi">41078347</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>
+<span class="mi">4</span>   <span class="mi">41078591</span>   <span class="n">BROOKLYN</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>
 
-             <span class="n">due_date</span> <span class="n">closed_date</span>  
-<span class="mi">0</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mo">01</span><span class="p">:</span><span class="mi">59</span><span class="p">:</span><span class="mi">50</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">07</span>  
-<span class="mi">1</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mo">00</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">24</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">07</span>  
-<span class="mi">2</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">09</span><span class="p">:</span><span class="mi">20</span><span class="p">:</span><span class="mi">35</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">17</span>  
-<span class="mi">3</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">13</span><span class="p">:</span><span class="mi">51</span><span class="p">:</span><span class="mi">12</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">05</span>  
-<span class="mi">4</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">26</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">04</span>  
+             <span class="n">due_date</span> <span class="n">closed_date</span>
+<span class="mi">0</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mo">01</span><span class="p">:</span><span class="mi">59</span><span class="p">:</span><span class="mi">50</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">07</span>
+<span class="mi">1</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mo">00</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">24</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">07</span>
+<span class="mi">2</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">09</span><span class="p">:</span><span class="mi">20</span><span class="p">:</span><span class="mi">35</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">17</span>
+<span class="mi">3</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">13</span><span class="p">:</span><span class="mi">51</span><span class="p">:</span><span class="mi">12</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">05</span>
+<span class="mi">4</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">26</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">04</span>
 </code></pre></div></div>
 
 <p>Note that calling <code class="highlighter-rouge">schema.validate(df)</code> will return the validated dataframe,
@@ -585,7 +585,7 @@ validation:</p>
 <p>To obtain the three insights that we need to create our monthly report, we need
 to manipulate the data. There’s no single workflow for adding guard rails around your
 data manipulation code, but a good rule of thumb is to compose a sequence of functions
-together to do it. We can then use these functions as scaffolding to verify the 
+together to do it. We can then use these functions as scaffolding to verify the
 dataframe inputs/outputs of a function before they’re passed onto the next one.</p>
 
 <p>First we clean up the <code class="highlighter-rouge">complaint_type</code> column in order to address the first
@@ -623,8 +623,8 @@ and then validating the output of the function with a <code class="highlighter-r
         <span class="o">.</span><span class="n">replace</span><span class="p">({</span><span class="s">"complaint_type_clean"</span><span class="p">:</span> <span class="n">REPLACE_DICT</span><span class="p">})</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">clean_complaint_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">clean_df</span><span class="p">)</span>
-    
-    
+
+
 <span class="n">clean_complaint_type</span><span class="p">(</span><span class="n">df_311</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
 
 <div>
@@ -920,7 +920,7 @@ dataframe/series to check.</p>
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@check_input</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dataframe</span><span class="p">):</span>
     <span class="o">...</span>
-    
+
 <span class="nd">@check_input</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="s">"dataframe"</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dataframe</span><span class="p">):</span>
     <span class="o">...</span>
@@ -1040,7 +1040,7 @@ that have null values or where the proportion is <code class="highlighter-rouge"
         <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="s">"agency_name"</span><span class="p">)</span>
         <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">"proportion_closed_on_time &gt; 0"</span><span class="p">)</span>
     <span class="p">)</span>
-    
+
 
 <span class="nd">@check_input</span><span class="p">(</span><span class="n">proportion_by_agency_schema</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">plot_proportion_by_agency</span><span class="p">(</span><span class="n">proportion_by_agency_df</span><span class="p">):</span>
@@ -1123,7 +1123,7 @@ useful features coming down the road, like built-in hypothesis testing, multi-co
 validation, and multi-index column and index validation.</p>
 
 <p>On a personal note, I’ve found that it takes a little more discipline to add these
-validation checks to my code, but I’m already seeing the benefits of doing so in my 
+validation checks to my code, but I’m already seeing the benefits of doing so in my
 professional and side-project code. Thanks for reading, and feel free to try <code class="highlighter-rouge">pandera</code> out!</p>
 
     <div id="disqus_thread"></div>
