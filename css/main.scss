@@ -47,6 +47,10 @@ table.dataframe td, th {
   text-align: left;
 }
 
+// dataframe div container
+.post-content div {
+  overflow-x: scroll;
+}
 
 // Use media queries like this:
 // @include media-query($on-palm) {

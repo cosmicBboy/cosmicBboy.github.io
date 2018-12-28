@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>cosmicbboy</title>
+  <meta name="description" content="Pandas offers a powerful interface for datamanipulation and analysis, but the dataframe can be an opaque object that’shard to reason about in terms of its da...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://localhost:4000/2018/12/28/validating-pandas-dataframes.html">
+  <link rel="alternate" type="application/rss+xml" title="|___|" href="http://localhost:4000/feed.xml">
+
+  <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+  <!--[if lt IE 9]>
+  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">|___|</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">2018-12-28-validating-pandas-dataframes</h1>
+    <p class="post-meta"><time datetime="2018-12-28T00:00:00-05:00" itemprop="datePublished">Dec 28, 2018</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="https://pandas.pydata.org/">Pandas</a> offers a powerful interface for data
+manipulation and analysis, but the dataframe can be an opaque object that’s
+hard to reason about in terms of its data types and other properties. Often
+times you’ll have to manually inspect a dataframe at runtime to confirm its contents.
+The careful reader may even be able to infer the datatypes of its columns by the kinds
+of functions you apply to it, but at the cost of considerable cognitive overhead.</p>
+
+<p>This problem is magnified in complex ETL pipelines that may involve many
+transformations and joins, or collaborative contexts in which teams of data
+scientists/engineers need to maintain pandas code in production. Even in
+research or reporting settings, maintaining reproducible code can be a challenge
+if the underlying dataset is corrupted or otherwise changed unexpectedly,
+especially if the findings of an analysis leads to business-critical decisions.</p>
+
+<p><a href="https://github.com/cosmicBboy/pandera">Pandera</a> is a validation toolkit to make
+pandas data structures more transparent so it’s easier to reason about the
+underlying schema of pandas data structures as they undergo various transformations.</p>
+
+<p>In this post I’ll sketch out a situation that you may find yourself in where
+using Pandera may save you and your team from a lot of headaches.</p>
+
+<h2 id="case-study-new-york-311-data">Case Study: New York 311 Data</h2>
+
+<p>Suppose that you run a small data science shop, and one of your clients is the
+New York mayor’s office. They’ve tasked you with creating monthly reports of
+New York’s 311 calls containing insights about:</p>
+
+<ol>
+  <li>The most common complaints/descriptors by borough.</li>
+  <li>The proportion of service requests that are closed on or before the due date
+by responding agency.</li>
+  <li>The number of complaints per day by complaint type and borough.</li>
+</ol>
+
+<p>For the purposes of this exercise, let’s assume that this dataset is
+periodically updated on the official data portal. Every month you need to
+generate a new report (an html file) with some plots showing the relevant
+summary statistics.</p>
+
+<h2 id="dataset-quality-validation">Dataset Quality Validation</h2>
+
+<p>The first thing we need to do is read the data into memory from
+<a href="https://nycopendata.socrata.com/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9">nycopendata</a>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">Markdown</span>
+<span class="kn">from</span> <span class="nn">sodapy</span> <span class="kn">import</span> <span class="n">Socrata</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+<span class="c"># utility function to print python output as markdown snippets</span>
+<span class="k">def</span> <span class="nf">print_output</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">Markdown</span><span class="p">(</span><span class="s">"```python</span><span class="se">\n</span><span class="s">{}</span><span class="se">\n</span><span class="s">```"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span>
+    
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># define date range </span>
+<span class="n">DATE_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="s">"2018/12/01"</span><span class="p">,</span> <span class="s">"2018/12/31"</span><span class="p">)</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Socrata</span><span class="p">(</span><span class="s">"data.cityofnewyork.us"</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<span class="c"># get data from the beginning of the month</span>
+
+<span class="n">df_311</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s">"erm2-nwe9"</span><span class="p">,</span>
+        <span class="c"># use socrata SoQL query clauses: https://dev.socrata.com/docs/queries/</span>
+        <span class="n">where</span><span class="o">=</span><span class="s">"created_date &gt;= '</span><span class="si">%</span><span class="s">s' and created_date &lt;= '</span><span class="si">%</span><span class="s">s'"</span> <span class="o">%</span> <span class="n">DATE_RANGE</span><span class="p">))</span>
+<span class="n">df_311</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>address_type</th>
+      <th>agency</th>
+      <th>agency_name</th>
+      <th>bbl</th>
+      <th>borough</th>
+      <th>bridge_highway_direction</th>
+      <th>bridge_highway_name</th>
+      <th>bridge_highway_segment</th>
+      <th>city</th>
+      <th>closed_date</th>
+      <th>...</th>
+      <th>park_facility_name</th>
+      <th>resolution_action_updated_date</th>
+      <th>resolution_description</th>
+      <th>road_ramp</th>
+      <th>status</th>
+      <th>street_name</th>
+      <th>taxi_pick_up_location</th>
+      <th>unique_key</th>
+      <th>x_coordinate_state_plane</th>
+      <th>y_coordinate_state_plane</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>ADDRESS</td>
+      <td>NYPD</td>
+      <td>New York City Police Department</td>
+      <td>1004470036</td>
+      <td>MANHATTAN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NEW YORK</td>
+      <td>2018-12-01T02:06:00</td>
+      <td>...</td>
+      <td>Unspecified</td>
+      <td>2018-12-01T02:06:00</td>
+      <td>The Police Department responded to the complai...</td>
+      <td>NaN</td>
+      <td>Closed</td>
+      <td>EAST 5 STREET</td>
+      <td>NaN</td>
+      <td>41069627</td>
+      <td>987601</td>
+      <td>203900</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>ADDRESS</td>
+      <td>NYPD</td>
+      <td>New York City Police Department</td>
+      <td>3011630076</td>
+      <td>BROOKLYN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>BROOKLYN</td>
+      <td>2018-12-01T04:45:58</td>
+      <td>...</td>
+      <td>Unspecified</td>
+      <td>2018-12-01T04:45:58</td>
+      <td>The Police Department responded to the complai...</td>
+      <td>NaN</td>
+      <td>Closed</td>
+      <td>PARK PLACE</td>
+      <td>NaN</td>
+      <td>41069628</td>
+      <td>995811</td>
+      <td>185024</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>ADDRESS</td>
+      <td>NYPD</td>
+      <td>New York City Police Department</td>
+      <td>2046730075</td>
+      <td>BRONX</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>BRONX</td>
+      <td>2018-12-01T11:49:18</td>
+      <td>...</td>
+      <td>Unspecified</td>
+      <td>2018-12-01T11:49:18</td>
+      <td>The Police Department issued a summons in resp...</td>
+      <td>NaN</td>
+      <td>Closed</td>
+      <td>EAST 215 STREET</td>
+      <td>NaN</td>
+      <td>41069671</td>
+      <td>1022979</td>
+      <td>259673</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 38 columns</p>
+</div>
+
+<p>Simple enough!  We can see that each row in this dataset is a service request record containing
+metadata about different aspects of the request, like which borough the call came from, and which
+agency responded to the call.</p>
+
+<p>One thing we can do to make this code more readable would be to
+explicitly specify the columns we want to use, and what type we expect them to be.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># specify column names and types</span>
+<span class="n">usecols</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
+    <span class="p">(</span><span class="s">"unique_key"</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"borough"</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"agency_name"</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"created_date"</span><span class="p">,</span> <span class="s">"datetime64[ns]"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"due_date"</span><span class="p">,</span> <span class="s">"datetime64[ns]"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"closed_date"</span><span class="p">,</span> <span class="s">"datetime64[ns]"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"complaint_type"</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="n">cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">usecols</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<span class="c"># page through the results</span>
+<span class="n">MAX_PAGES</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">LIMIT</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"fetching 311 data:"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_PAGES</span><span class="p">):</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s">"erm2-nwe9"</span><span class="p">,</span>
+        <span class="n">select</span><span class="o">=</span><span class="s">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cols</span><span class="p">),</span>
+        <span class="n">where</span><span class="o">=</span><span class="s">"created_date &gt;= '</span><span class="si">%</span><span class="s">s' and created_date &lt;= '</span><span class="si">%</span><span class="s">s'"</span> <span class="o">%</span> <span class="n">DATE_RANGE</span><span class="p">,</span>
+        <span class="n">order</span><span class="o">=</span><span class="s">"created_date"</span><span class="p">,</span>
+        <span class="n">limit</span><span class="o">=</span><span class="n">LIMIT</span><span class="p">,</span>
+        <span class="n">offset</span><span class="o">=</span><span class="n">LIMIT</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"."</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">""</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">records</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">LIMIT</span><span class="p">:</span>
+        <span class="k">break</span>
+
+        
+<span class="n">df_311</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">records</span><span class="p">)[</span><span class="n">cols</span><span class="p">]</span>
+<span class="n">df_311</span> <span class="o">=</span> <span class="n">df_311</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">usecols</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">df_311</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span></code></pre></figure>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>fetching 311 data:
+.................
+</code></pre></div></div>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>unique_key</th>
+      <th>borough</th>
+      <th>agency_name</th>
+      <th>created_date</th>
+      <th>due_date</th>
+      <th>closed_date</th>
+      <th>complaint_type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>41072528</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 01:59:50</td>
+      <td>2018-12-07</td>
+      <td>Unsanitary Animal Pvt Property</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>41073153</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 00:29:24</td>
+      <td>2018-12-07</td>
+      <td>Rodent</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>41078328</td>
+      <td>MANHATTAN</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 09:20:35</td>
+      <td>2018-10-17</td>
+      <td>Rodent</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Wait, but we can do even better! Based on the project requirements and what we know about 
+these data either by reading the <a href="https://dev.socrata.com/foundry/data.cityofnewyork.us/fhrw-4uyv">documentation</a> or doing some 
+exploratory data analysis, we can make some stricter assertions
+about them. We can do this very simply with <code class="highlighter-rouge">pandera</code>.</p>
+
+<h3 id="defining-a-dataframeschema">Defining a DataFrameSchema</h3>
+
+<p>Beyond the column presence and data type checks, we can make assertions about
+the properties that the dataset must have in order to be considered valid.</p>
+
+<p>We first define a <code class="highlighter-rouge">DataFrameSchema</code>, feeding it a dictionary where keys are
+column names and values are <code class="highlighter-rouge">Column</code> objects, which are initialized with the
+data type of the column and a <code class="highlighter-rouge">Check</code> or a list of <code class="highlighter-rouge">Check</code>s.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pandera</span> <span class="kn">import</span> <span class="n">DataFrameSchema</span><span class="p">,</span> <span class="n">Check</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Index</span><span class="p">,</span> <span class="n">Bool</span><span class="p">,</span> \
+    <span class="n">DateTime</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> <span class="n">Int</span><span class="p">,</span> <span class="n">String</span>
+
+<span class="n">schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="s">"column1"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+    <span class="s">"column2"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+    <span class="s">"column3"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="p">[</span>
+        <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">),</span>
+        <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">)])</span>
+<span class="p">})</span></code></pre></figure>
+
+<p>A <code class="highlighter-rouge">Check</code> takes a function as an argument with the signature <code class="highlighter-rouge">x -&gt; Bool</code>
+where <code class="highlighter-rouge">x</code> is a particular value in the column. In the code below you can
+see that the <code class="highlighter-rouge">status</code> and <code class="highlighter-rouge">borough</code> column checks assert that all the values in
+the column are in a pre-specified set of categories.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">"category_1"</span><span class="p">,</span> <span class="s">"category_2"</span><span class="p">]);</span>
+</code></pre></div></div>
+
+<p>You can create vectorized checks by specifying <code class="highlighter-rouge">element_wise=False</code> (<code class="highlighter-rouge">True</code> by default), which
+changes the expected function signature to <code class="highlighter-rouge">s -&gt; Bool|Series[Bool]</code>, where <code class="highlighter-rouge">s</code> is a pandas 
+<code class="highlighter-rouge">Series</code> and the return value can either be <code class="highlighter-rouge">Bool</code> or a boolean <code class="highlighter-rouge">Series</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># the checking function resolves to a boolean</span>
+<span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">);</span>
+
+<span class="c"># the checking function can also resolve to a boolean Series</span>
+<span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>For human-friendly error messages, you can also supply an <code class="highlighter-rouge">error</code> argument with the message 
+to raise if the check fails. We can check this functionality out with a <code class="highlighter-rouge">SeriesSchema</code>, which
+has a similar API to the <code class="highlighter-rouge">DataFrameSchema</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pandera</span> <span class="kn">import</span> <span class="n">SeriesSchema</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">series_schema</span> <span class="o">=</span> <span class="n">SeriesSchema</span><span class="p">(</span>
+    <span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="nb">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">error</span><span class="o">=</span><span class="s">"failed uniqueness check"</span><span class="p">))</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">series_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">print_output</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></code></pre></figure>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">series</span> <span class="n">did</span> <span class="ow">not</span> <span class="k">pass</span> <span class="n">series</span> <span class="n">validator</span> <span class="mi">0</span><span class="p">:</span> <span class="o">&lt;</span><span class="k">lambda</span><span class="o">&gt;</span><span class="p">:</span> <span class="n">failed</span> <span class="n">uniqueness</span> <span class="n">check</span>
+</code></pre></div></div>
+
+<p>Multiple columns can also use the same <code class="highlighter-rouge">Check</code> objects. In the code snippet
+below I’ve defined a <code class="highlighter-rouge">date_min_check</code> object that are used to verify the
+<code class="highlighter-rouge">due_date</code>, and <code class="highlighter-rouge">closed_date</code> columns, along with the <code class="highlighter-rouge">df_311_schema</code> that
+specifies the schema for the 311 data.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># define a date range checker</span>
+<span class="n">date_range_check</span> <span class="o">=</span> <span class="n">Check</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="n">s</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">&amp;</span>
+              <span class="p">(</span><span class="n">s</span> <span class="o">&lt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+    <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="n">date_min_check</span> <span class="o">=</span> <span class="n">Check</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                   
+<span class="n">BOROUGHS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">"BROOKLYN"</span><span class="p">,</span>
+    <span class="s">"QUEENS"</span><span class="p">,</span>
+    <span class="s">"BRONX"</span><span class="p">,</span>
+    <span class="s">"MANHATTAN"</span><span class="p">,</span>
+    <span class="s">"STATEN ISLAND"</span><span class="p">,</span>
+    <span class="s">"Unspecified"</span><span class="p">]</span>
+    
+<span class="c"># constructing a schema should feel familiar for pandas users</span>
+<span class="n">df_311_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="c"># make sure unique_key is unique</span>
+    <span class="s">"unique_key"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="nb">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span>
+                                       <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                                       <span class="n">error</span><span class="o">=</span><span class="s">"column is not unique"</span><span class="p">)),</span>
+    <span class="c"># assert borough column contain proper values</span>
+    <span class="s">"borough"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">BOROUGHS</span><span class="p">,</span>
+                                    <span class="n">error</span><span class="o">=</span><span class="s">"borough check failed"</span><span class="p">)),</span>
+    <span class="s">"agency_name"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+    <span class="c"># assert that records are within the date range</span>
+    <span class="s">"created_date"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">date_range_check</span><span class="p">),</span>
+    <span class="s">"due_date"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">date_min_check</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="s">"closed_date"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">date_min_check</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="s">"complaint_type"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+<span class="p">})</span></code></pre></figure>
+
+<p>Once we’ve defined the <code class="highlighter-rouge">DataFrameSchema</code>, we can use it to verify the data.
+I usually take this opportunity to create a preprocessing function that does some basic
+filtering/transformations. In this case I’m going to assume that records with
+<code class="highlighter-rouge">closed_date &lt; created_date</code> are malformed data. There may some good reason the data is
+this way, but for now so I’ll be removing them from the analysis.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">preprocess_data</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="c"># remove records where closed_date occurs before created_date</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="o">~</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">closed_date</span> <span class="o">&lt;</span> <span class="n">df</span><span class="o">.</span><span class="n">created_date</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+<span class="n">preprocessed_df_311</span> <span class="o">=</span> <span class="n">df_311_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">preprocess_data</span><span class="p">(</span><span class="n">df_311</span><span class="p">))</span></code></pre></figure>
+
+<p>With a <code class="highlighter-rouge">DataFrameSchema</code>, not only can we see what to expect from
+our input data, <code class="highlighter-rouge">pandera</code> also verifies that they fulfill these expectations
+at runtime.</p>
+
+<p>Suppose that for some unknown reason these data are corrupted at a future date.
+<code class="highlighter-rouge">pandera</code> gives us useful error messages based on whether a column is missing, a
+column has the incorrect data type, or whether a <code class="highlighter-rouge">Check</code> assertion failed.</p>
+
+<p>For example, if some of the <code class="highlighter-rouge">created_date</code> values somehow fell out of the expected date
+range due to a datetime parsing error, we receive a useful error message.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">df_311_corrupt</span> <span class="o">=</span> <span class="n">df_311</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<span class="n">df_311_corrupt</span><span class="p">[</span><span class="s">"created_date"</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_311_corrupt</span><span class="p">[</span>
+    <span class="s">"created_date"</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">df_311_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">df_311_corrupt</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">print_output</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">code</span><span class="p">)</span></code></pre></figure>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&lt;</span><span class="n">Schema</span> <span class="n">Column</span><span class="p">:</span> <span class="nb">type</span><span class="o">=</span><span class="n">datetime64</span><span class="p">[</span><span class="n">ns</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">failed</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="n">validator</span> <span class="mi">0</span><span class="p">:</span>
+<span class="o">&lt;</span><span class="k">lambda</span><span class="o">&gt;</span>
+<span class="n">failure</span> <span class="n">cases</span><span class="p">:</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">Timestamp</span><span class="p">(</span><span class="s">'2018-09-22 00:00:00'</span><span class="p">),</span> <span class="mi">1</span><span class="p">:</span> <span class="n">Timestamp</span><span class="p">(</span><span class="s">'2018-09-22 00:00:00'</span><span class="p">),</span> <span class="mi">2</span><span class="p">:</span> <span class="n">Timestamp</span><span class="p">(</span><span class="s">'2018-09-22 00:00:00'</span><span class="p">),</span> <span class="mi">3</span><span class="p">:</span> <span class="n">Timestamp</span><span class="p">(</span><span class="s">'2018-09-22 00:00:00'</span><span class="p">),</span> <span class="mi">4</span><span class="p">:</span> <span class="n">Timestamp</span><span class="p">(</span><span class="s">'2018-09-22 00:00:00'</span><span class="p">)}</span>
+</code></pre></div></div>
+
+<p>Or if a column isn’t the expected type.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">df_311_corrupt</span> <span class="o">=</span> <span class="n">df_311</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+    <span class="n">unique_key</span><span class="o">=</span><span class="n">df_311</span><span class="o">.</span><span class="n">unique_key</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">df_311_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">df_311_corrupt</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">print_output</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">code</span><span class="p">)</span></code></pre></figure>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">expected</span> <span class="n">series</span> <span class="s">'unique_key'</span> <span class="n">to</span> <span class="n">have</span> <span class="nb">type</span> <span class="nb">object</span><span class="p">,</span> <span class="n">got</span> <span class="n">int64</span>
+</code></pre></div></div>
+
+<p>Or if the column is somehow not present in the dataframe.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">df_311_corrupt</span> <span class="o">=</span> <span class="n">df_311</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">"complaint_type"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">df_311_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">df_311_corrupt</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">print_output</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">code</span><span class="p">)</span></code></pre></figure>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">column</span> <span class="s">'complaint_type'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataframe</span>
+  <span class="n">unique_key</span>    <span class="n">borough</span>                              <span class="n">agency_name</span> <span class="n">created_date</span>  \
+<span class="mi">0</span>   <span class="mi">41072528</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
+<span class="mi">1</span>   <span class="mi">41073153</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
+<span class="mi">2</span>   <span class="mi">41078328</span>  <span class="n">MANHATTAN</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
+<span class="mi">3</span>   <span class="mi">41078347</span>     <span class="n">QUEENS</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
+<span class="mi">4</span>   <span class="mi">41078591</span>   <span class="n">BROOKLYN</span>  <span class="n">Department</span> <span class="n">of</span> <span class="n">Health</span> <span class="ow">and</span> <span class="n">Mental</span> <span class="n">Hygiene</span>   <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">01</span>   
+
+             <span class="n">due_date</span> <span class="n">closed_date</span>  
+<span class="mi">0</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mo">01</span><span class="p">:</span><span class="mi">59</span><span class="p">:</span><span class="mi">50</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">07</span>  
+<span class="mi">1</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mo">00</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mi">24</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">07</span>  
+<span class="mi">2</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">09</span><span class="p">:</span><span class="mi">20</span><span class="p">:</span><span class="mi">35</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">17</span>  
+<span class="mi">3</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">13</span><span class="p">:</span><span class="mi">51</span><span class="p">:</span><span class="mi">12</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">05</span>  
+<span class="mi">4</span> <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">26</span>  <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mo">04</span>  
+</code></pre></div></div>
+
+<p>Note that calling <code class="highlighter-rouge">schema.validate(df)</code> will return the validated dataframe,
+so you would be able to easily refactor an existing function to perform schema
+validation:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">processing_function</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="c"># do something</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">processed_df</span>
+
+
+<span class="k">def</span> <span class="nf">processing_function</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="c"># do something</span>
+    <span class="o">...</span>
+    <span class="c"># validate the output</span>
+    <span class="k">return</span> <span class="n">schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">processed_df</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">processing_function</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="c"># validate the input</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="c"># do something</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">processed_df</span></code></pre></figure>
+
+<h2 id="adding-guardrails-around-your-data-munging-pipeline">Adding Guardrails around your Data Munging Pipeline</h2>
+
+<p>To obtain the three insights that we need to create our monthly report, we need
+to manipulate the data. There’s no single workflow for adding guard rails around your
+data manipulation code, but a good rule of thumb is to compose a sequence of functions
+together to do it. We can then use these functions as scaffolding to verify the 
+dataframe inputs/outputs of a function before they’re passed onto the next one.</p>
+
+<p>First we clean up the <code class="highlighter-rouge">complaint_type</code> column in order to address the first
+question:</p>
+
+<blockquote>
+  <ol>
+    <li>The most common complaints by borough.</li>
+  </ol>
+</blockquote>
+
+<p>In this case we’ll be re-mapping a few of the values in the <code class="highlighter-rouge">complaint_type</code> column
+and then validating the output of the function with a <code class="highlighter-rouge">DataFrameSchema</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">REPLACE_DICT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">"Noise - Residential"</span><span class="p">:</span> <span class="s">"Noise"</span><span class="p">,</span>
+    <span class="s">"Noise - Street/Sidewalk"</span><span class="p">:</span> <span class="s">"Noise"</span><span class="p">,</span>
+    <span class="s">"Noise - Commercial"</span><span class="p">:</span> <span class="s">"Noise"</span><span class="p">,</span>
+    <span class="s">"Noise - Park"</span><span class="p">:</span> <span class="s">"Noise"</span><span class="p">,</span>
+    <span class="s">"Noise - Helicopter"</span><span class="p">:</span> <span class="s">"Noise"</span><span class="p">,</span>
+    <span class="s">"Noise - Vehicle"</span><span class="p">:</span> <span class="s">"Noise"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">clean_complaint_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="s">"complaint_type_clean"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="p">[</span>
+        <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">REPLACE_DICT</span><span class="p">),</span>
+        <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="s">"Noise"</span><span class="p">)</span><span class="o">.</span><span class="nb">any</span><span class="p">(),</span> <span class="n">element_wise</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="p">])</span>
+<span class="p">})</span>
+
+
+<span class="k">def</span> <span class="nf">clean_complaint_type</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">clean_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">complaint_type_clean</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">complaint_type</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">({</span><span class="s">"complaint_type_clean"</span><span class="p">:</span> <span class="n">REPLACE_DICT</span><span class="p">})</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">clean_complaint_schema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">clean_df</span><span class="p">)</span>
+    
+    
+<span class="n">clean_complaint_type</span><span class="p">(</span><span class="n">df_311</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>unique_key</th>
+      <th>borough</th>
+      <th>agency_name</th>
+      <th>created_date</th>
+      <th>due_date</th>
+      <th>closed_date</th>
+      <th>complaint_type</th>
+      <th>complaint_type_clean</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>41072528</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 01:59:50</td>
+      <td>2018-12-07</td>
+      <td>Unsanitary Animal Pvt Property</td>
+      <td>Unsanitary Animal Pvt Property</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>41073153</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 00:29:24</td>
+      <td>2018-12-07</td>
+      <td>Rodent</td>
+      <td>Rodent</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>41078328</td>
+      <td>MANHATTAN</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 09:20:35</td>
+      <td>2018-10-17</td>
+      <td>Rodent</td>
+      <td>Rodent</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Next, we create a new column <code class="highlighter-rouge">closed_lte_due</code> which is a boolean column
+where <code class="highlighter-rouge">True</code> indicates that the service request was closed before or at
+the <code class="highlighter-rouge">due_date</code>. We’ll need this derived data when answering the second question:</p>
+
+<blockquote>
+  <ol>
+    <li>The proportion of service requests that are closed on or before the due date
+  by responding agency.</li>
+  </ol>
+</blockquote>
+
+<p>In this case, we’ll use the <code class="highlighter-rouge">check_output</code> decorator as a convenience to validate
+the output of the function (which is assumed to be a dataframe).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pandera</span> <span class="kn">import</span> <span class="n">check_output</span>
+
+
+<span class="nd">@check_output</span><span class="p">(</span><span class="n">DataFrameSchema</span><span class="p">({</span><span class="s">"closed_lte_due"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Bool</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">)}))</span>
+<span class="k">def</span> <span class="nf">add_closed_lte_due</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="n">closed_lte_due</span><span class="o">=</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">closed_date</span> <span class="o">&lt;=</span> <span class="n">df</span><span class="o">.</span><span class="n">due_date</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">due_date</span><span class="o">.</span><span class="n">notnull</span><span class="p">(),</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">))</span>
+    <span class="p">)</span>
+
+
+<span class="n">add_closed_lte_due</span><span class="p">(</span><span class="n">df_311</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>unique_key</th>
+      <th>borough</th>
+      <th>agency_name</th>
+      <th>created_date</th>
+      <th>due_date</th>
+      <th>closed_date</th>
+      <th>complaint_type</th>
+      <th>closed_lte_due</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>41072528</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 01:59:50</td>
+      <td>2018-12-07</td>
+      <td>Unsanitary Animal Pvt Property</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>41073153</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 00:29:24</td>
+      <td>2018-12-07</td>
+      <td>Rodent</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>41078328</td>
+      <td>MANHATTAN</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 09:20:35</td>
+      <td>2018-10-17</td>
+      <td>Rodent</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Usage Note:</strong></p>
+
+<p>You can specify where the dataframe is in the output structure, where the
+default assumes a single dataframe as an output.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@check_output</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="c"># do stuff</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div></div>
+
+<p>Or supply an integer, indexing where the dataframe is in a tuple output.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@check_output</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">df</span>
+</code></pre></div></div>
+
+<p>And for more complex outputs, supply a lambda function to specify how to
+pull the dataframe from python objects.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@check_output</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">out</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s">"df_key"</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">{</span><span class="s">"df_key"</span><span class="p">:</span> <span class="n">df</span><span class="p">}</span>
+</code></pre></div></div>
+
+<p>Finally, we clean up the <code class="highlighter-rouge">created_date</code> column and create a new column
+<code class="highlighter-rouge">created_date_clean</code> with the format <code class="highlighter-rouge">YYYY-MM-DD</code>. We’ll need this in order
+to count up the number of records created per day for the last question:</p>
+
+<blockquote>
+  <ol>
+    <li>Number of complaints recorded per day by complaint type and borough.</li>
+  </ol>
+</blockquote>
+
+<p>For this last function, we’ll be validating both the inputs and outputs of
+our function with <code class="highlighter-rouge">check_input</code> and <code class="highlighter-rouge">check_output</code>, respectively. Checking
+the input is probably not necessary at this point, but it just illustrates
+how one can define validation points at the input or output level.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pandera</span> <span class="kn">import</span> <span class="n">check_input</span>
+
+
+<span class="nd">@check_input</span><span class="p">(</span><span class="n">DataFrameSchema</span><span class="p">({</span><span class="s">"created_date"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">)}))</span>
+<span class="nd">@check_output</span><span class="p">(</span><span class="n">DataFrameSchema</span><span class="p">({</span><span class="s">"created_date_clean"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">)}))</span>
+<span class="k">def</span> <span class="nf">clean_created_date</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">created_date_clean</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">created_date</span>
+            <span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">"'</span><span class="si">%</span><span class="s">Y-</span><span class="si">%</span><span class="s">m-</span><span class="si">%</span><span class="s">d"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">"datetime64[ns]"</span><span class="p">)))</span>
+<span class="p">)</span>
+
+<span class="n">clean_created_date</span><span class="p">(</span><span class="n">df_311</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>unique_key</th>
+      <th>borough</th>
+      <th>agency_name</th>
+      <th>created_date</th>
+      <th>due_date</th>
+      <th>closed_date</th>
+      <th>complaint_type</th>
+      <th>created_date_clean</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>41072528</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 01:59:50</td>
+      <td>2018-12-07</td>
+      <td>Unsanitary Animal Pvt Property</td>
+      <td>2018-12-01</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>41073153</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 00:29:24</td>
+      <td>2018-12-07</td>
+      <td>Rodent</td>
+      <td>2018-12-01</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>41078328</td>
+      <td>MANHATTAN</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 09:20:35</td>
+      <td>2018-10-17</td>
+      <td>Rodent</td>
+      <td>2018-12-01</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Usage Note:</strong></p>
+
+<p>Using <code class="highlighter-rouge">@check_input</code>, you can specify which positional or key-word argument
+references the dataframe, where the default assumes the first argument is the
+dataframe/series to check.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@check_input</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dataframe</span><span class="p">):</span>
+    <span class="o">...</span>
+    
+<span class="nd">@check_input</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="s">"dataframe"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">my_function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dataframe</span><span class="p">):</span>
+    <span class="o">...</span>
+</code></pre></div></div>
+
+<p>Now we can pipe these functions in sequence to obtain our cleaned data.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">clean_df_311</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">df_311</span>
+    <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">clean_complaint_type</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">add_closed_lte_due</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">clean_created_date</span><span class="p">))</span></code></pre></figure>
+
+<h2 id="reproducible-reports-validate-analysis-and-plotting-code">Reproducible Reports: Validate Analysis and Plotting Code</h2>
+
+<p>Now that we have all the derived data we need to produce our report, we can now
+compute summary statistics and create plots for the final product.</p>
+
+<p>Here it’s useful to think of our data manipulation code as the “backend” data
+and our insight-generating code as the “frontend” data.</p>
+
+<p>So at this point we need to reshape our “backend” data into the appropriate
+aggregated form that can be easily plotted. Here <code class="highlighter-rouge">pandera</code> can help by
+clarifying what our aggregation and plotting functions can expect.</p>
+
+<h3 id="count-of-the-most-common-complaints-by-borough">Count of the Most Common Complaints by Borough</h3>
+
+<p>First we select records belonging to the top 12 complaint types and
+count them up by <code class="highlighter-rouge">borough</code> and <code class="highlighter-rouge">complaint_type_clean</code>. These aggregated
+data can then be used to produce a plot of the <code class="highlighter-rouge">count</code> of complaints in
+the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by <code class="highlighter-rouge">complaint_type_clean</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">complaint_by_borough_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="s">"borough"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+    <span class="s">"complaint_type_clean"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+    <span class="c"># make sure count column contains positive integers</span>
+    <span class="s">"count"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+<span class="p">})</span>
+
+<span class="n">TOP_N</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">COMPLAINT_TYPE_TITLE</span> <span class="o">=</span> \
+    <span class="s">"</span><span class="si">%</span><span class="s">s  ( </span><span class="si">%</span><span class="s">s - </span><span class="si">%</span><span class="s">s )"</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="s">"Number of New York 311 service requests by borough and complaint type"</span><span class="p">,</span>
+        <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="nd">@check_output</span><span class="p">(</span><span class="n">complaint_by_borough_schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">agg_complaint_types_by_borough</span><span class="p">(</span><span class="n">clean_df</span><span class="p">):</span>
+    <span class="n">plot_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">clean_df</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s">"borough"</span><span class="p">,</span> <span class="s">"complaint_type_clean"</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">unique_key</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">"count"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
+    <span class="c"># select only the top 12 complaint types (across all boroughs)</span>
+    <span class="n">top_complaints</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">clean_df</span><span class="o">.</span><span class="n">complaint_type_clean</span>
+        <span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">TOP_N</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">plot_df</span><span class="p">[</span><span class="n">plot_df</span><span class="o">.</span><span class="n">complaint_type_clean</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">top_complaints</span><span class="p">)]</span>
+
+
+<span class="c"># this is probably overkill, but this illustrates that you can</span>
+<span class="c"># add schema checks at the interface of two functions.</span>
+<span class="nd">@check_input</span><span class="p">(</span><span class="n">complaint_by_borough_schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">plot_complaint_types_by_borough</span><span class="p">(</span><span class="n">complaint_by_borough_df</span><span class="p">):</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">catplot</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="s">"count"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"borough"</span><span class="p">,</span>
+        <span class="n">col</span><span class="o">=</span><span class="s">"complaint_type_clean"</span><span class="p">,</span>
+        <span class="n">col_wrap</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">complaint_by_borough_df</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s">"bar"</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">aspect</span><span class="o">=</span><span class="mf">1.4</span><span class="p">,</span>
+        <span class="n">sharex</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">set_titles</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s">"{col_name}"</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">set_ylabels</span><span class="p">(</span><span class="s">""</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">COMPLAINT_TYPE_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">():</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">g</span>
+
+<span class="k">with</span> <span class="n">sns</span><span class="o">.</span><span class="n">plotting_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s">"notebook"</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.2</span><span class="p">):</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">agg_complaint_types_by_borough</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">)</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span>
+        <span class="n">plot_complaint_types_by_borough</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_40_0.png" alt="png" /></p>
+
+<h3 id="proportion-of-service-requests-closed-on-or-before-the-due-date">Proportion of Service Requests Closed on or Before the Due Date</h3>
+
+<p>For this question we’ll compute the proportion of requests that were closed
+on or before the <code class="highlighter-rouge">due_date</code> by <code class="highlighter-rouge">agency_name</code>, where we’ll remove entries
+that have null values or where the proportion is <code class="highlighter-rouge">0</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">proportion_by_agency_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="s">"agency_name"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+    <span class="s">"proportion_closed_on_time"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Float</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">})</span>
+
+<span class="n">PROPORTION_BY_AGENCY_TITLE</span> <span class="o">=</span> \
+    <span class="s">"</span><span class="si">%</span><span class="s">s  ( </span><span class="si">%</span><span class="s">s - </span><span class="si">%</span><span class="s">s )"</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="s">"Proportion of New York 311 requests closed on time by Responding Agency"</span><span class="p">,</span>
+        <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="nd">@check_output</span><span class="p">(</span><span class="n">proportion_by_agency_schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">agg_proportion_by_agency</span><span class="p">(</span><span class="n">clean_df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">clean_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s">"agency_name"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">closed_lte_due</span><span class="o">.</span><span class="nb">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">"proportion_closed_on_time"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="s">"agency_name"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">"proportion_closed_on_time &gt; 0"</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+
+<span class="nd">@check_input</span><span class="p">(</span><span class="n">proportion_by_agency_schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">plot_proportion_by_agency</span><span class="p">(</span><span class="n">proportion_by_agency_df</span><span class="p">):</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">catplot</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="s">"proportion_closed_on_time"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"agency_name"</span><span class="p">,</span>
+        <span class="n">order</span><span class="o">=</span><span class="n">proportion_by_agency_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+            <span class="s">"proportion_closed_on_time"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">agency_name</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">proportion_by_agency_df</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s">"bar"</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">aspect</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">set_ylabels</span><span class="p">(</span><span class="s">""</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">():</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">PROPORTION_BY_AGENCY_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.03</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">g</span>
+
+<span class="k">with</span> <span class="n">sns</span><span class="o">.</span><span class="n">plotting_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s">"notebook"</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.1</span><span class="p">):</span>
+    <span class="n">axes</span> <span class="o">=</span> <span class="n">plot_proportion_by_agency</span><span class="p">(</span><span class="n">agg_proportion_by_agency</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_42_0.png" alt="png" /></p>
+
+<h3 id="daily-complaints-per-borough">Daily Complaints per Borough</h3>
+
+<p>Here we have to count up all number of service requests per day by <code class="highlighter-rouge">borough</code>,
+so we’ll want to make sure that the <code class="highlighter-rouge">number_of_complaints</code> is a positive number
+and that the borough values are in the <code class="highlighter-rouge">BOROUGHS</code> global variable that we defined
+earlier.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">daily_complaints_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="s">"created_date_clean"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">]))),</span>
+    <span class="s">"borough"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">BOROUGHS</span><span class="p">)),</span>
+    <span class="s">"number_of_complaints"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+<span class="p">})</span>
+
+<span class="n">DAILY_COMPLAINTS_TITLE</span> <span class="o">=</span> \
+    <span class="s">"</span><span class="si">%</span><span class="s">s  ( </span><span class="si">%</span><span class="s">s - </span><span class="si">%</span><span class="s">s )"</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="s">"Number of daily complaints by borough"</span><span class="p">,</span>
+        <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+
+<span class="nd">@check_output</span><span class="p">(</span><span class="n">daily_complaints_schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">agg_daily_complaints</span><span class="p">(</span><span class="n">clean_df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">clean_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s">"borough"</span><span class="p">,</span> <span class="s">"created_date_clean"</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">unique_key</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">"number_of_complaints"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
+
+
+<span class="nd">@check_input</span><span class="p">(</span><span class="n">daily_complaints_schema</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">plot_daily_complaints</span><span class="p">(</span><span class="n">daily_complaints_df</span><span class="p">):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="s">"created_date_clean"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"number_of_complaints"</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s">"borough"</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">daily_complaints_df</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">DAILY_COMPLAINTS_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span>
+
+<span class="k">with</span> <span class="n">sns</span><span class="o">.</span><span class="n">plotting_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s">"notebook"</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.2</span><span class="p">):</span>
+    <span class="n">plot_daily_complaints</span><span class="p">(</span><span class="n">agg_daily_complaints</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_44_0.png" alt="png" /></p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>And there you have it! Once you know your data well enough to express the contents
+of a dataframe as a schema of columns, data types, and checks, your code can be
+more easily reviewed, debugged, and maintained by you and your team.</p>
+
+<p>What this post doesn’t really illustrate is the process of getting to know your data,
+which is highly context dependent. In this case, I used the same jupyter notebook
+that I used to create this post as a scratch-pad for inspecting the data and figuring
+out exactly what I needed it to look like in order to answer the questions in my fictional
+example using NYC 311 data.</p>
+
+<p>I’m actively developing <a href="https://github.com/cosmicBboy/pandera"><code class="highlighter-rouge">pandera</code></a>, with some
+useful features coming down the road, like built-in hypothesis testing, multi-column
+validation, and multi-index column and index validation.</p>
+
+<p>On a personal note, I’ve found that it takes a little more discipline to add these
+validation checks to my code, but I’m already seeing the benefits of doing so in my 
+professional and side-project code. Thanks for reading, and feel free to try <code class="highlighter-rouge">pandera</code> out!</p>
+
+    <div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//csmcbboy.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:niels.bantilan@gmail.com">niels.bantilan@gmail.com</a></li>
+          <li>
+            <p class="rss-subscribe">subscribe via <a href="/feed.xml">RSS</a></p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/cosmicBboy">
+    <span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span>
+    <span class="username">Github</span>
+</a>
+
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/cosmicBboy">
+    <span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span>
+    <span class="username">Twitter</span>
+</a>
+
+          </li>
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Hi, my name is Niels. I like to create with code.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

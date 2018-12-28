@@ -20,13 +20,11 @@ setup-ipynb:
 	wget -P ./$(BLOG_NOTEBOOKS) $(JEKYLL_TEMPLATE)
 
 nbconvert-draft:
-	cd ./$(BLOG_NOTEBOOKS) && \
-		jupyter nbconvert --config jekyll-post.py $(NOTEBOOK).ipynb \
-			--output $(DATE)-$(NOTEBOOK).md && \
-		mv $(DATE)-$(NOTEBOOK).md ../_posts
+	jupyter nbconvert --config jekyll-post.py $(NOTEBOOK) \
+		--to=markdown && \
+	mv $$(dirname $(NOTEBOOK))/$$(basename $(NOTEBOOK) .ipynb).md _drafts
 
 nbconvert-pub:
-	cd ./$(BLOG_NOTEBOOKS) && \
-		jupyter nbconvert --config jekyll-post.py $(NOTEBOOK).ipynb \
-			--output=$(DATE)-$(NOTEBOOK).md && \
-		mv $(DATE)-$(NOTEBOOK).md ../_posts
+	jupyter nbconvert --config jekyll-post.py $(NOTEBOOK) \
+		--to=markdown && \
+	mv $$(dirname $(NOTEBOOK))/$$(basename $(NOTEBOOK) .ipynb).md _posts

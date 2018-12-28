@@ -5,6 +5,8 @@ table.dataframe { background: white; border-color: #cbd2d6; border-collapse: col
 
 table.dataframe td, th { border-color: #cbd2d6; border-style: solid; padding: 5px; text-align: left; }
 
+.post-content div { overflow-x: scroll; }
+
 /** Reset some basic elements */
 body, h1, h2, h3, h4, h5, h6, p, blockquote, pre, hr, dl, dd, ol, ul, figure { margin: 0; padding: 0; }
 
