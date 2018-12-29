@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Validating your Personal Relationship with Pandas DataFrames"
+title: "Validate your Personal Relationship with Pandas Dataframes"
 tags:
     - python
     - notebook
@@ -63,6 +63,8 @@ logging.disable(logging.WARNING)
 # utility function to print python output as markdown snippets
 def print_output(s):
     display(Markdown("```python\n{}\n```".format(s)))
+
+plt.style.use('seaborn-white')
 
 %matplotlib inline
 {% endhighlight %}
@@ -1010,6 +1012,7 @@ def plot_complaint_types_by_borough(complaint_by_borough_df):
     for ax in g.axes.ravel():
         ax.tick_params(left=False)
     return g
+
 
 with sns.plotting_context(context="notebook", font_scale=1.2):
     g = agg_complaint_types_by_borough(clean_df_311).pipe(

@@ -68,7 +68,7 @@
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">Validating your Personal Relationship with Pandas DataFrames</h1>
+    <h1 class="post-title" itemprop="name headline">Validate your Personal Relationship with Pandas Dataframes</h1>
     <p class="post-meta"><time datetime="2018-12-28T00:00:00-05:00" itemprop="datePublished">Dec 28, 2018</time></p>
   </header>
 
@@ -131,6 +131,8 @@ summary statistics.</p>
 <span class="c"># utility function to print python output as markdown snippets</span>
 <span class="k">def</span> <span class="nf">print_output</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
     <span class="n">display</span><span class="p">(</span><span class="n">Markdown</span><span class="p">(</span><span class="s">"```python</span><span class="se">\n</span><span class="s">{}</span><span class="se">\n</span><span class="s">```"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s">'seaborn-white'</span><span class="p">)</span>
 
 <span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span></code></pre></figure>
 
@@ -1006,6 +1008,7 @@ the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by 
     <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">():</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">g</span>
+
 
 <span class="k">with</span> <span class="n">sns</span><span class="o">.</span><span class="n">plotting_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s">"notebook"</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.2</span><span class="p">):</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">agg_complaint_types_by_borough</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">)</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span>
