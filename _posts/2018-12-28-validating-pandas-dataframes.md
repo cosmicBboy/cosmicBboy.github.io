@@ -26,6 +26,11 @@ underlying schema of pandas data structures as they undergo various transformati
 In this post I’ll sketch out a situation that you may find yourself in where
 using Pandera may save you and your team from a lot of headaches.
 
+**Update 12/31/2018:** *service request absolute counts are misleading,
+since the underlying population of each borough varies. I updated the
+transformation and plotting functions to normalize the counts by
+population size.*
+
 ## Case Study: New York 311 Data
 
 Suppose that you run a small data science shop, and one of your clients is the
@@ -257,7 +262,7 @@ display(df_311.head(3))
 {% endhighlight %}
 
     fetching 311 data:
-    .................
+    ...................
 
 
 <div>
@@ -573,6 +578,8 @@ data manipulation code, but a good rule of thumb is to compose a sequence of fun
 together to do it. We can then use these functions as scaffolding to verify the
 dataframe inputs/outputs of a function before they’re passed onto the next one.
 
+### Cleaning up Complaints
+
 First we clean up the `complaint_type` column in order to address the first
 question:
 
@@ -681,6 +688,8 @@ clean_complaint_type(df_311).head(3)
 </div>
 
 
+
+### Creating Derived Data
 
 Next, we create a new column `closed_lte_due` which is a boolean column
 where `True` indicates that the service request was closed before or at
@@ -811,7 +820,9 @@ def my_function(df):
     return x, y, {"df_key": df}
 ```
 
-Finally, we clean up the `created_date` column and create a new column
+### Cleaning Created Date
+
+The following transformation cleans up the `created_date` column and creates a new column
 `created_date_clean` with the format `YYYY-MM-DD`. We'll need this in order
 to count up the number of records created per day for the last question:
 
@@ -927,6 +938,108 @@ def my_function(x, dataframe):
     ...
 ```
 
+### Joining with Data External Sources
+
+Since our analysis involves counting up complaints by borough, we'll need to normalize
+the counts by dividing it by borough population estimates.
+
+You can imagine that your script calls some API that sends these estimates for you, but
+for now we're going to hard-code them here. These numbers are taken from
+[NYC.gov](https://www1.nyc.gov/site/planning/data-maps/nyc-population/current-future-populations.page).
+
+
+{% highlight python %}
+BOROUGH_POPULATION_MAP = {
+    "BROOKLYN": 2648771,
+    "QUEENS": 2358582,
+    "BRONX": 1471160,
+    "MANHATTAN": 1664727,
+    "STATEN ISLAND": 479458,
+}
+
+
+@check_output(DataFrameSchema({
+    "borough_population": Column(
+        Float, Check(lambda x: x > 0),nullable=True)
+}))
+def add_borough_population(df):
+    return df.assign(
+        borough_population=df.borough.map(BOROUGH_POPULATION_MAP))
+
+add_borough_population(df_311).head(3)
+{% endhighlight %}
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>unique_key</th>
+      <th>borough</th>
+      <th>agency_name</th>
+      <th>created_date</th>
+      <th>due_date</th>
+      <th>closed_date</th>
+      <th>complaint_type</th>
+      <th>borough_population</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>41072528</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 01:59:50</td>
+      <td>2018-12-07</td>
+      <td>Unsanitary Animal Pvt Property</td>
+      <td>2358582.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>41073153</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 00:29:24</td>
+      <td>2018-12-07</td>
+      <td>Rodent</td>
+      <td>2358582.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>41078328</td>
+      <td>MANHATTAN</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 09:20:35</td>
+      <td>2018-10-17</td>
+      <td>Rodent</td>
+      <td>1664727.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
 Now we can pipe these functions in sequence to obtain our cleaned data.
 
 
@@ -935,7 +1048,8 @@ clean_df_311 = (
     df_311
     .pipe(clean_complaint_type)
     .pipe(add_closed_lte_due)
-    .pipe(clean_created_date))
+    .pipe(clean_created_date)
+    .pipe(add_borough_population))
 {% endhighlight %}
 
 ## Reproducible Reports: Validate Analysis and Plotting Code
@@ -957,13 +1071,18 @@ count them up by `borough` and `complaint_type_clean`. These aggregated
 data can then be used to produce a plot of the `count` of complaints in
 the last quarter vs. `borough`, faceted by `complaint_type_clean`.
 
+Note that here we normalize the per-borough counts by the respective population, so the normalized count interpretation would be _"number of complaints per 1
+million people"_.
+
 
 {% highlight python %}
 complaint_by_borough_schema = DataFrameSchema({
     "borough": Column(String),
+    "borough_population": Column(Float, nullable=True),
     "complaint_type_clean": Column(String),
     # make sure count column contains positive integers
     "count": Column(Int, Check(lambda x: x > 0)),
+    "complaints_per_pop": Column(Float)
 })
 
 TOP_N = 12
@@ -972,14 +1091,26 @@ COMPLAINT_TYPE_TITLE = \
         "Number of New York 311 service requests by borough and complaint type",
         DATE_RANGE[0], DATE_RANGE[1])
 
+
+def normalize_by_population(
+        df: pd.DataFrame,
+        count: str,
+        population: str,
+        scale: float) -> pd.Series:
+    """Normalizes at 1 million scale."""
+    return df[count] / (df[population] / scale)
+
 @check_output(complaint_by_borough_schema)
 def agg_complaint_types_by_borough(clean_df):
     plot_df = (
         clean_df
-        .groupby(["borough", "complaint_type_clean"])
+        .groupby(["borough", "borough_population", "complaint_type_clean"])
         .unique_key.count()
         .rename("count")
-        .reset_index())
+        .reset_index()
+        .assign(complaints_per_pop=lambda df: (
+            normalize_by_population(df, "count", "borough_population", 10**6)))
+    )
     # select only the top 12 complaint types (across all boroughs)
     top_complaints = (
         clean_df.complaint_type_clean
@@ -994,9 +1125,10 @@ def agg_complaint_types_by_borough(clean_df):
 @check_input(complaint_by_borough_schema)
 def plot_complaint_types_by_borough(complaint_by_borough_df):
     g = sns.catplot(
-        x="count", y="borough",
+        x="complaints_per_pop",
+        y="borough",
         col="complaint_type_clean",
-        col_wrap=4,
+        col_wrap=3,
         data=complaint_by_borough_df,
         kind="bar",
         height=3,
@@ -1005,9 +1137,10 @@ def plot_complaint_types_by_borough(complaint_by_borough_df):
     )
     g.set_titles(template="{col_name}")
     g.set_ylabels("")
-    g.fig.suptitle(COMPLAINT_TYPE_TITLE, y=1.05, fontweight="bold", fontsize=16)
+    g.set_xlabels("n complaints / 1M people")
+    g.fig.suptitle(COMPLAINT_TYPE_TITLE, y=1.05, fontweight="bold", fontsize=18)
     plt.tight_layout()
-    plt.subplots_adjust(hspace=0.8, wspace=0.4)
+    plt.subplots_adjust(hspace=0.6, wspace=0.4)
     sns.despine(left=True, bottom=True)
     for ax in g.axes.ravel():
         ax.tick_params(left=False)
@@ -1020,7 +1153,7 @@ with sns.plotting_context(context="notebook", font_scale=1.2):
 {% endhighlight %}
 
 
-![png](/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_40_0.png)
+![png](/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_46_0.png)
 
 
 ### Proportion of Service Requests Closed on or Before the Due Date
@@ -1063,9 +1196,10 @@ def plot_proportion_by_agency(proportion_by_agency_df):
         data=proportion_by_agency_df,
         kind="bar",
         height=8,
-        aspect=1.5)
+        aspect=1.4)
     sns.despine(left=True, bottom=True)
     g.set_ylabels("")
+    g.set_xlabels("proportion closed on time")
     for ax in g.axes.ravel():
         ax.tick_params(left=False)
     g.fig.suptitle(PROPORTION_BY_AGENCY_TITLE, y=1.03, fontweight="bold", fontsize=14)
@@ -1077,7 +1211,7 @@ with sns.plotting_context(context="notebook", font_scale=1.1):
 {% endhighlight %}
 
 
-![png](/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_42_0.png)
+![png](/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_48_0.png)
 
 
 ### Daily Complaints per Borough
@@ -1087,35 +1221,44 @@ so we'll want to make sure that the `number_of_complaints` is a positive number
 and that the borough values are in the `BOROUGHS` global variable that we defined
 earlier.
 
+Here we also normalize the per-borough counts by the respective population (per 1K).
+
 
 {% highlight python %}
 daily_complaints_schema = DataFrameSchema({
     "created_date_clean": Column(DateTime, Check(lambda x: x >= pd.Timestamp(DATE_RANGE[0]))),
     "borough": Column(String, Check(lambda x: x in BOROUGHS)),
-    "number_of_complaints": Column(Int, Check(lambda x: x > 0)),
+    "borough_population": Column(Float, nullable=True),
+    "count": Column(Int, Check(lambda x: x > 0)),
+    "complaints_per_pop": Column(Float, nullable=True)
 })
 
 DAILY_COMPLAINTS_TITLE = \
     "%s  ( %s - %s )" % (
-        "Number of daily complaints by borough",
+        "Number of daily New York 311 requests by borough",
         DATE_RANGE[0], DATE_RANGE[1])
 
 
 @check_output(daily_complaints_schema)
 def agg_daily_complaints(clean_df):
     return (
-        clean_df.groupby(["borough", "created_date_clean"])
-        .unique_key.count().rename("number_of_complaints")
-        .reset_index())
+        clean_df
+        .groupby(["borough", "borough_population", "created_date_clean"])
+        .unique_key.count().rename("count")
+        .reset_index()
+        .assign(complaints_per_pop=lambda df: (
+            normalize_by_population(df, "count", "borough_population", 10**3))))
 
 
 @check_input(daily_complaints_schema)
 def plot_daily_complaints(daily_complaints_df):
-    fig, ax = plt.subplots(1, figsize=(18, 6))
+    fig, ax = plt.subplots(1, figsize=(12, 6))
     ax = sns.lineplot(
-        x="created_date_clean", y="number_of_complaints", hue="borough",
+        x="created_date_clean", y="complaints_per_pop", hue="borough",
         data=daily_complaints_df, ax=ax)
     sns.despine()
+    ax.set_ylabel("n complaints / 1K people")
+    ax.set_xlabel("created on")
     fig.suptitle(DAILY_COMPLAINTS_TITLE, y=0.99, fontweight="bold", fontsize=16)
     return ax
 
@@ -1124,7 +1267,7 @@ with sns.plotting_context(context="notebook", font_scale=1.2):
 {% endhighlight %}
 
 
-![png](/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_44_0.png)
+![png](/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_50_0.png)
 
 
 ## Conclusion

@@ -94,6 +94,11 @@ underlying schema of pandas data structures as they undergo various transformati
 <p>In this post I’ll sketch out a situation that you may find yourself in where
 using Pandera may save you and your team from a lot of headaches.</p>
 
+<p><strong>Update 12/31/2018:</strong> <em>service request absolute counts are misleading,
+since the underlying population of each borough varies. I updated the
+transformation and plotting functions to normalize the counts by
+population size.</em></p>
+
 <h2 id="case-study-new-york-311-data">Case Study: New York 311 Data</h2>
 
 <p>Suppose that you run a small data science shop, and one of your clients is the
@@ -313,7 +318,7 @@ explicitly specify the columns we want to use, and what type we expect them to b
 <span class="n">display</span><span class="p">(</span><span class="n">df_311</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span></code></pre></figure>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>fetching 311 data:
-.................
+...................
 </code></pre></div></div>
 
 <div>
@@ -590,6 +595,8 @@ data manipulation code, but a good rule of thumb is to compose a sequence of fun
 together to do it. We can then use these functions as scaffolding to verify the
 dataframe inputs/outputs of a function before they’re passed onto the next one.</p>
 
+<h3 id="cleaning-up-complaints">Cleaning up Complaints</h3>
+
 <p>First we clean up the <code class="highlighter-rouge">complaint_type</code> column in order to address the first
 question:</p>
 
@@ -694,6 +701,8 @@ and then validating the output of the function with a <code class="highlighter-r
   </tbody>
 </table>
 </div>
+
+<h3 id="creating-derived-data">Creating Derived Data</h3>
 
 <p>Next, we create a new column <code class="highlighter-rouge">closed_lte_due</code> which is a boolean column
 where <code class="highlighter-rouge">True</code> indicates that the service request was closed before or at
@@ -817,7 +826,9 @@ pull the dataframe from python objects.</p>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">{</span><span class="s">"df_key"</span><span class="p">:</span> <span class="n">df</span><span class="p">}</span>
 </code></pre></div></div>
 
-<p>Finally, we clean up the <code class="highlighter-rouge">created_date</code> column and create a new column
+<h3 id="cleaning-created-date">Cleaning Created Date</h3>
+
+<p>The following transformation cleans up the <code class="highlighter-rouge">created_date</code> column and creates a new column
 <code class="highlighter-rouge">created_date_clean</code> with the format <code class="highlighter-rouge">YYYY-MM-DD</code>. We’ll need this in order
 to count up the number of records created per day for the last question:</p>
 
@@ -928,13 +939,108 @@ dataframe/series to check.</p>
     <span class="o">...</span>
 </code></pre></div></div>
 
+<h3 id="joining-with-data-external-sources">Joining with Data External Sources</h3>
+
+<p>Since our analysis involves counting up complaints by borough, we’ll need to normalize
+the counts by dividing it by borough population estimates.</p>
+
+<p>You can imagine that your script calls some API that sends these estimates for you, but
+for now we’re going to hard-code them here. These numbers are taken from
+<a href="https://www1.nyc.gov/site/planning/data-maps/nyc-population/current-future-populations.page">NYC.gov</a>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">BOROUGH_POPULATION_MAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">"BROOKLYN"</span><span class="p">:</span> <span class="mi">2648771</span><span class="p">,</span>
+    <span class="s">"QUEENS"</span><span class="p">:</span> <span class="mi">2358582</span><span class="p">,</span>
+    <span class="s">"BRONX"</span><span class="p">:</span> <span class="mi">1471160</span><span class="p">,</span>
+    <span class="s">"MANHATTAN"</span><span class="p">:</span> <span class="mi">1664727</span><span class="p">,</span>
+    <span class="s">"STATEN ISLAND"</span><span class="p">:</span> <span class="mi">479458</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="nd">@check_output</span><span class="p">(</span><span class="n">DataFrameSchema</span><span class="p">({</span>
+    <span class="s">"borough_population"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">Float</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span><span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="p">}))</span>
+<span class="k">def</span> <span class="nf">add_borough_population</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+        <span class="n">borough_population</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">borough</span><span class="o">.</span><span class="nb">map</span><span class="p">(</span><span class="n">BOROUGH_POPULATION_MAP</span><span class="p">))</span>
+
+<span class="n">add_borough_population</span><span class="p">(</span><span class="n">df_311</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>unique_key</th>
+      <th>borough</th>
+      <th>agency_name</th>
+      <th>created_date</th>
+      <th>due_date</th>
+      <th>closed_date</th>
+      <th>complaint_type</th>
+      <th>borough_population</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>41072528</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 01:59:50</td>
+      <td>2018-12-07</td>
+      <td>Unsanitary Animal Pvt Property</td>
+      <td>2358582.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>41073153</td>
+      <td>QUEENS</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 00:29:24</td>
+      <td>2018-12-07</td>
+      <td>Rodent</td>
+      <td>2358582.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>41078328</td>
+      <td>MANHATTAN</td>
+      <td>Department of Health and Mental Hygiene</td>
+      <td>2018-12-01</td>
+      <td>2018-12-31 09:20:35</td>
+      <td>2018-10-17</td>
+      <td>Rodent</td>
+      <td>1664727.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
 <p>Now we can pipe these functions in sequence to obtain our cleaned data.</p>
 
 <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">clean_df_311</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">df_311</span>
     <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">clean_complaint_type</span><span class="p">)</span>
     <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">add_closed_lte_due</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">clean_created_date</span><span class="p">))</span></code></pre></figure>
+    <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">clean_created_date</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">add_borough_population</span><span class="p">))</span></code></pre></figure>
 
 <h2 id="reproducible-reports-validate-analysis-and-plotting-code">Reproducible Reports: Validate Analysis and Plotting Code</h2>
 
@@ -955,11 +1061,16 @@ count them up by <code class="highlighter-rouge">borough</code> and <code class=
 data can then be used to produce a plot of the <code class="highlighter-rouge">count</code> of complaints in
 the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by <code class="highlighter-rouge">complaint_type_clean</code>.</p>
 
+<p>Note that here we normalize the per-borough counts by the respective population, so the normalized count interpretation would be <em>“number of complaints per 1
+million people”</em>.</p>
+
 <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">complaint_by_borough_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
     <span class="s">"borough"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
+    <span class="s">"borough_population"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
     <span class="s">"complaint_type_clean"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
     <span class="c"># make sure count column contains positive integers</span>
     <span class="s">"count"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+    <span class="s">"complaints_per_pop"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
 <span class="p">})</span>
 
 <span class="n">TOP_N</span> <span class="o">=</span> <span class="mi">12</span>
@@ -968,14 +1079,26 @@ the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by 
         <span class="s">"Number of New York 311 service requests by borough and complaint type"</span><span class="p">,</span>
         <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
+
+<span class="k">def</span> <span class="nf">normalize_by_population</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">count</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">population</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="s">"""Normalizes at 1 million scale."""</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">population</span><span class="p">]</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span>
+
 <span class="nd">@check_output</span><span class="p">(</span><span class="n">complaint_by_borough_schema</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">agg_complaint_types_by_borough</span><span class="p">(</span><span class="n">clean_df</span><span class="p">):</span>
     <span class="n">plot_df</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">clean_df</span>
-        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s">"borough"</span><span class="p">,</span> <span class="s">"complaint_type_clean"</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s">"borough"</span><span class="p">,</span> <span class="s">"borough_population"</span><span class="p">,</span> <span class="s">"complaint_type_clean"</span><span class="p">])</span>
         <span class="o">.</span><span class="n">unique_key</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
         <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">"count"</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">complaints_per_pop</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">normalize_by_population</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s">"count"</span><span class="p">,</span> <span class="s">"borough_population"</span><span class="p">,</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span><span class="p">)))</span>
+    <span class="p">)</span>
     <span class="c"># select only the top 12 complaint types (across all boroughs)</span>
     <span class="n">top_complaints</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">clean_df</span><span class="o">.</span><span class="n">complaint_type_clean</span>
@@ -990,9 +1113,10 @@ the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by 
 <span class="nd">@check_input</span><span class="p">(</span><span class="n">complaint_by_borough_schema</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">plot_complaint_types_by_borough</span><span class="p">(</span><span class="n">complaint_by_borough_df</span><span class="p">):</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">catplot</span><span class="p">(</span>
-        <span class="n">x</span><span class="o">=</span><span class="s">"count"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"borough"</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s">"complaints_per_pop"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s">"borough"</span><span class="p">,</span>
         <span class="n">col</span><span class="o">=</span><span class="s">"complaint_type_clean"</span><span class="p">,</span>
-        <span class="n">col_wrap</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">col_wrap</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="n">data</span><span class="o">=</span><span class="n">complaint_by_borough_df</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="s">"bar"</span><span class="p">,</span>
         <span class="n">height</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
@@ -1001,9 +1125,10 @@ the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by 
     <span class="p">)</span>
     <span class="n">g</span><span class="o">.</span><span class="n">set_titles</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s">"{col_name}"</span><span class="p">)</span>
     <span class="n">g</span><span class="o">.</span><span class="n">set_ylabels</span><span class="p">(</span><span class="s">""</span><span class="p">)</span>
-    <span class="n">g</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">COMPLAINT_TYPE_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">set_xlabels</span><span class="p">(</span><span class="s">"n complaints / 1M people"</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">COMPLAINT_TYPE_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">():</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
@@ -1014,7 +1139,7 @@ the last quarter vs. <code class="highlighter-rouge">borough</code>, faceted by 
     <span class="n">g</span> <span class="o">=</span> <span class="n">agg_complaint_types_by_borough</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">)</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span>
         <span class="n">plot_complaint_types_by_borough</span><span class="p">)</span></code></pre></figure>
 
-<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_40_0.png" alt="png" /></p>
+<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_46_0.png" alt="png" /></p>
 
 <h3 id="proportion-of-service-requests-closed-on-or-before-the-due-date">Proportion of Service Requests Closed on or Before the Due Date</h3>
 
@@ -1054,9 +1179,10 @@ that have null values or where the proportion is <code class="highlighter-rouge"
         <span class="n">data</span><span class="o">=</span><span class="n">proportion_by_agency_df</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="s">"bar"</span><span class="p">,</span>
         <span class="n">height</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
-        <span class="n">aspect</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">aspect</span><span class="o">=</span><span class="mf">1.4</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">g</span><span class="o">.</span><span class="n">set_ylabels</span><span class="p">(</span><span class="s">""</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">set_xlabels</span><span class="p">(</span><span class="s">"proportion closed on time"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">():</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
     <span class="n">g</span><span class="o">.</span><span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">PROPORTION_BY_AGENCY_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.03</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
@@ -1065,7 +1191,7 @@ that have null values or where the proportion is <code class="highlighter-rouge"
 <span class="k">with</span> <span class="n">sns</span><span class="o">.</span><span class="n">plotting_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s">"notebook"</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.1</span><span class="p">):</span>
     <span class="n">axes</span> <span class="o">=</span> <span class="n">plot_proportion_by_agency</span><span class="p">(</span><span class="n">agg_proportion_by_agency</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">))</span></code></pre></figure>
 
-<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_42_0.png" alt="png" /></p>
+<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_48_0.png" alt="png" /></p>
 
 <h3 id="daily-complaints-per-borough">Daily Complaints per Borough</h3>
 
@@ -1074,40 +1200,49 @@ so we’ll want to make sure that the <code class="highlighter-rouge">number_of_
 and that the borough values are in the <code class="highlighter-rouge">BOROUGHS</code> global variable that we defined
 earlier.</p>
 
+<p>Here we also normalize the per-borough counts by the respective population (per 1K).</p>
+
 <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">daily_complaints_schema</span> <span class="o">=</span> <span class="n">DataFrameSchema</span><span class="p">({</span>
     <span class="s">"created_date_clean"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">]))),</span>
     <span class="s">"borough"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">BOROUGHS</span><span class="p">)),</span>
-    <span class="s">"number_of_complaints"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+    <span class="s">"borough_population"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span>
+    <span class="s">"count"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Check</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)),</span>
+    <span class="s">"complaints_per_pop"</span><span class="p">:</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="p">})</span>
 
 <span class="n">DAILY_COMPLAINTS_TITLE</span> <span class="o">=</span> \
     <span class="s">"</span><span class="si">%</span><span class="s">s  ( </span><span class="si">%</span><span class="s">s - </span><span class="si">%</span><span class="s">s )"</span> <span class="o">%</span> <span class="p">(</span>
-        <span class="s">"Number of daily complaints by borough"</span><span class="p">,</span>
+        <span class="s">"Number of daily New York 311 requests by borough"</span><span class="p">,</span>
         <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DATE_RANGE</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
 
 <span class="nd">@check_output</span><span class="p">(</span><span class="n">daily_complaints_schema</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">agg_daily_complaints</span><span class="p">(</span><span class="n">clean_df</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">clean_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s">"borough"</span><span class="p">,</span> <span class="s">"created_date_clean"</span><span class="p">])</span>
-        <span class="o">.</span><span class="n">unique_key</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">"number_of_complaints"</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
+        <span class="n">clean_df</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s">"borough"</span><span class="p">,</span> <span class="s">"borough_population"</span><span class="p">,</span> <span class="s">"created_date_clean"</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">unique_key</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">"count"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">complaints_per_pop</span><span class="o">=</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">normalize_by_population</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s">"count"</span><span class="p">,</span> <span class="s">"borough_population"</span><span class="p">,</span> <span class="mi">10</span><span class="o">**</span><span class="mi">3</span><span class="p">))))</span>
 
 
 <span class="nd">@check_input</span><span class="p">(</span><span class="n">daily_complaints_schema</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">plot_daily_complaints</span><span class="p">(</span><span class="n">daily_complaints_df</span><span class="p">):</span>
-    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
     <span class="n">ax</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span>
-        <span class="n">x</span><span class="o">=</span><span class="s">"created_date_clean"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"number_of_complaints"</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s">"borough"</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s">"created_date_clean"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"complaints_per_pop"</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s">"borough"</span><span class="p">,</span>
         <span class="n">data</span><span class="o">=</span><span class="n">daily_complaints_df</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">"n complaints / 1K people"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">"created on"</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">DAILY_COMPLAINTS_TITLE</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s">"bold"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ax</span>
 
 <span class="k">with</span> <span class="n">sns</span><span class="o">.</span><span class="n">plotting_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s">"notebook"</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.2</span><span class="p">):</span>
     <span class="n">plot_daily_complaints</span><span class="p">(</span><span class="n">agg_daily_complaints</span><span class="p">(</span><span class="n">clean_df_311</span><span class="p">))</span></code></pre></figure>
 
-<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_44_0.png" alt="png" /></p>
+<p><img src="/notebooks/2018-12-28-validating-pandas-dataframes_files/2018-12-28-validating-pandas-dataframes_50_0.png" alt="png" /></p>
 
 <h2 id="conclusion">Conclusion</h2>
 
