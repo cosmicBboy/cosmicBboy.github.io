@@ -31,7 +31,7 @@ since the underlying population of each borough varies. I updated the
 transformation and plotting functions to normalize the counts by
 population size.*
 
-## [Case Study: New York 311 Data](#case-study-new-york-311-data)
+## Case Study: New York 311 Data
 
 Suppose that you run a small data science shop, and one of your clients is the
 New York mayor’s office. They’ve tasked you with creating monthly reports of
@@ -69,7 +69,7 @@ logging.disable(logging.WARNING)
 def print_output(s):
     display(Markdown("```python\n{}\n```".format(s)))
 
-plt.style.use('seaborn-white')
+sns.set_style("whitegrid")
 
 %matplotlib inline
 {% endhighlight %}
@@ -1135,6 +1135,7 @@ def plot_complaint_types_by_borough(complaint_by_borough_df):
         aspect=1.4,
         sharex=False,
     )
+    g.fig.set_facecolor("white")
     g.set_titles(template="{col_name}")
     g.set_ylabels("")
     g.set_xlabels("n complaints / 1M people")
@@ -1145,6 +1146,7 @@ def plot_complaint_types_by_borough(complaint_by_borough_df):
     for ax in g.axes.ravel():
         ax.tick_params(left=False)
     return g
+
 
 
 with sns.plotting_context(context="notebook", font_scale=1.2):
@@ -1200,6 +1202,7 @@ def plot_proportion_by_agency(proportion_by_agency_df):
     sns.despine(left=True, bottom=True)
     g.set_ylabels("")
     g.set_xlabels("proportion closed on time")
+    g.fig.set_facecolor("white")
     for ax in g.axes.ravel():
         ax.tick_params(left=False)
     g.fig.suptitle(PROPORTION_BY_AGENCY_TITLE, y=1.03, fontweight="bold", fontsize=14)
@@ -1252,7 +1255,7 @@ def agg_daily_complaints(clean_df):
 
 @check_input(daily_complaints_schema)
 def plot_daily_complaints(daily_complaints_df):
-    fig, ax = plt.subplots(1, figsize=(12, 6))
+    fig, ax = plt.subplots(1, figsize=(12, 6), facecolor="white")
     ax = sns.lineplot(
         x="created_date_clean", y="complaints_per_pop", hue="borough",
         data=daily_complaints_df, ax=ax)
@@ -1262,8 +1265,9 @@ def plot_daily_complaints(daily_complaints_df):
     fig.suptitle(DAILY_COMPLAINTS_TITLE, y=0.99, fontweight="bold", fontsize=16)
     return ax
 
-with sns.plotting_context(context="notebook", font_scale=1.2):
-    plot_daily_complaints(agg_daily_complaints(clean_df_311))
+with sns.axes_style("white"):
+    with sns.plotting_context(context="notebook", font_scale=1.2):
+        plot_daily_complaints(agg_daily_complaints(clean_df_311))
 {% endhighlight %}
 
 
