@@ -71,6 +71,20 @@
     <h1 class="post-title" itemprop="name headline">A Human's Guide to Algorithmic Bias</h1>
     <p class="post-meta"><time datetime="2017-12-31T00:00:00-05:00" itemprop="datePublished">Dec 31, 2017</time></p>
   </header>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/anchor-js/3.2.0/anchor.min.js"></script>
+  <script>
+    $( document ).ready(function() {
+      (function () {
+        'use strict';
+        anchors.options.placement = 'right';
+        anchors.add('.post-content > h2, .post-content > h3, .post-content > h4, .post-content > h5, .post-content > h6');
+
+      })();
+    });
+  </script>
+
+
 
   <div class="post-content" itemprop="articleBody">
     <p>For the past year I’ve been doing a lot of introspecting, reading, and

@@ -31,7 +31,7 @@ since the underlying population of each borough varies. I updated the
 transformation and plotting functions to normalize the counts by
 population size.*
 
-## Case Study: New York 311 Data
+## [Case Study: New York 311 Data](#case-study-new-york-311-data)
 
 Suppose that you run a small data science shop, and one of your clients is the
 New York mayor’s office. They’ve tasked you with creating monthly reports of

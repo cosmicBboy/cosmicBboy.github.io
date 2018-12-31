@@ -19,5 +19,11 @@ github_username:  cosmicBboy
 # Build settings
 markdown: kramdown
 
+kramdown:
+  # Enable GitHub Flavored Markdown (fenced code blocks)
+  input: GFM
+  # Disable auto-generated ID's for headings
+  auto_ids: true
+
 # Google Analytics
 google_analytics: UA-71018060-1
